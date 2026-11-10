@@ -112,6 +112,7 @@
       { from: '2026-01-01', to: '2029-12-31', type: 'window', bands: [2.9, 3.1, 3.3, 3.5, 3.7], unverified: true }
     ],
     tariffDefault: 7,
+    airflow: { supplyDeltaF: 20, supplyDeltaF_humid: 18, humidSHR: 0.78, unitCfmPerTon: 380, freshPerPerson: 7.5, freshPerFt2: 0.03 },
     tariffs: {
       'Gujarat': 7, 'Delhi': 7.5, 'Maharashtra': 12, 'Karnataka': 7.5, 'Tamil Nadu': 8,
       'Telangana': 8, 'West Bengal': 8, 'Uttar Pradesh': 7, 'Rajasthan': 7.5, 'Madhya Pradesh': 7,
@@ -200,6 +201,8 @@
 
     const b = { walls: 0, roof: 0, glassSolar: 0, glassCond: 0, partitions: 0, people: 0, lights: 0, appliances: 0, kitchen: 0, infiltration: 0 };
     const lat = { people: 0, kitchen: 0, infiltration: 0 };
+    const rows = []; // heat load sheet line items
+    const row = (group, item, A, U, dTe, qs, ql, note) => rows.push({ group, item, area_m2: A, U, dT: dTe, sensible: qs, latent: ql || 0, note: note || '' });
 
     const wallU = (C.walls[inp.wallType] || C.walls.unknown).U;
     const colour = C.wallColour[inp.wallColour] || 0.8;
@@ -222,22 +225,29 @@
           else sf *= (C.shade[s] != null ? C.shade[s] : 1);
         });
         sf = Math.max(C.shade.floor, sf);
-        b.glassSolar += Ag * g.SHGC * o.scl * sf * usage.glassSolar;
-        b.glassCond += Ag * g.U * dT;
+        const qSol = Ag * g.SHGC * o.scl * sf * usage.glassSolar, qCond = Ag * g.U * dT;
+        b.glassSolar += qSol; b.glassCond += qCond;
         glassArea += Ag;
+        row('Glass', `Window ${win.areaFt2} sq ft on ${w.orient} wall — solar`, Ag, null, null, qSol, 0, `SHGC ${g.SHGC} × ${o.scl} W/m² × shade ${sf.toFixed(2)}`);
+        row('Glass', `Window ${win.areaFt2} sq ft on ${w.orient} wall — conduction`, Ag, g.U, dT, qCond, 0, '');
       });
       const net = Math.max(0, gross - glassArea);
-      b.walls += net * wallU * (dT + o.dsol * colour * usage.wallDsol);
+      const dTeq = dT + o.dsol * colour * usage.wallDsol, qw = net * wallU * dTeq;
+      b.walls += qw;
       extArea += gross;
+      row('Walls', `External wall facing ${w.orient} (net of glass)`, net, wallU, dTeq, qw, 0, `ΔT ${dT.toFixed(1)} + solar ${(o.dsol * colour * usage.wallDsol).toFixed(1)} K`);
     });
     // Partitions to unconditioned rooms
     const partArea = Math.max(0, totalWallArea - extArea);
     const dTp = Math.min(C.partitionDeltaCap, C.partitionDeltaFrac * dT);
     b.partitions += partArea * C.partitionU * dTp;
+    if (partArea > 0) row('Partitions', 'Internal walls to unconditioned rooms', partArea, C.partitionU, dTp, partArea * C.partitionU * dTp, 0, '');
     // Kitchen wall extra
     if (inp.kitchen !== 'none' && partArea > 0) {
       const kitchenWall = Math.min(partArea, Wd * H);
-      b.partitions += kitchenWall * C.partitionU * (dT + C.kitchenPartitionExtraK - dTp);
+      const qk = kitchenWall * C.partitionU * (dT + C.kitchenPartitionExtraK - dTp);
+      b.partitions += qk;
+      row('Partitions', 'Kitchen wall (extra over partition)', kitchenWall, C.partitionU, dT + C.kitchenPartitionExtraK - dTp, qk, 0, '');
     }
     // Roof
     if (inp.floor === 'top') {
@@ -245,32 +255,65 @@
       if (inp.falseCeiling) Ur *= C.falseCeilingFactor;
       const ds = (C.roofFinish[inp.roofFinish] || C.roofFinish.grey).dsol * usage.roofDsol;
       b.roof = area * Ur * (dT + ds);
+      row('Roof', `Exposed roof${inp.falseCeiling ? ' (with false ceiling)' : ''}`, area, Ur, dT + ds, b.roof, 0, `ΔT ${dT.toFixed(1)} + solar ${ds.toFixed(0)} K`);
     }
     // People
     const pType = inp.activity === 'active' ? 'active' : (usage.people || 'seated');
     const pp = C.people[pType];
     const nPeople = inp.usage === 'night' ? inp.peopleNight : inp.peopleDay;
     b.people = nPeople * pp.s; lat.people = nPeople * pp.l;
+    row('Internal', `${nPeople} people, ${pType}`, null, null, null, b.people, lat.people, `${pp.s} W sensible + ${pp.l} W latent each`);
     // Lights
     b.lights = inp.lightingW != null ? inp.lightingW : (C.lightingWm2[inp.lighting] || 0) * area;
     // Appliances
     b.appliances = (inp.appliances || []).reduce((s, k) => s + ((C.appliances[k] || {}).W || 0), 0);
+    row('Internal', 'Lighting', area, null, null, b.lights, 0, inp.lightingW != null ? 'actual W' : `${C.lightingWm2[inp.lighting] || 0} W/m²`);
+    (inp.appliances || []).forEach(k => { const a = C.appliances[k]; if (a) row('Internal', a.label, null, null, null, a.W, 0, ''); });
     // Kitchen
     const k = C.kitchen[inp.kitchen] || C.kitchen.none;
     b.kitchen = k.s; lat.kitchen = k.l;
+    if (k.s) row('Internal', inp.kitchen === 'open' ? 'Open kitchen (cooking)' : 'Kitchen spill through door', null, null, null, k.s, k.l, '');
     // Infiltration
     let ach = C.ach[inp.ach] || 1.0;
     if (inp.frequentDoor) ach += C.livingDoorExtraACH;
     const wo = humidityRatio(DB, WB, P), wi = humidityRatioRH(Ti, inp.indoorRH, P);
     b.infiltration = C.infilSensibleCoef * rho * ach * V * dT;
     lat.infiltration = C.infilLatentCoef * rho * ach * V * Math.max(0, wo - wi);
+    row('Infiltration', `Air leakage ${ach.toFixed(1)} ACH × ${V.toFixed(1)} m³ — sensible`, null, null, dT, b.infiltration, 0, `0.335 × ${rho.toFixed(2)} × ACH × V × ΔT`);
+    row('Infiltration', `Air leakage — moisture (Δw ${Math.max(0, wo - wi).toFixed(1)} g/kg)`, null, null, null, 0, lat.infiltration, `0.834 × ${rho.toFixed(2)} × ACH × V × Δw`);
 
     const sensible = Object.values(b).reduce((a, x) => a + x, 0);
     const latent = Object.values(lat).reduce((a, x) => a + x, 0);
     const total = sensible + latent;
     const design = total * (1 + C.safetyFactor);
-    return { DB, WB, dT, area_m2: area, volume_m3: V, P, rho, wo, wi, sensible: b, latent: lat,
+    const airflow = computeAirflow(sensible, latent, V, area, nPeople, design);
+    return { DB, WB, dT, area_m2: area, volume_m3: V, P, rho, wo, wi, sensible: b, latent: lat, rows, airflow, ach,
       sensibleW: sensible, latentW: latent, totalW: total, designW: design, designTR: wToTR(design), SHR: total ? sensible / total : 1 };
+  }
+
+  // ---------- Airflow (CFM) ----------
+  // Required supply airflow from sensible load: CFM = Q_s[BTU/h] / (1.08 × ΔT_supply[°F]).
+  // Indian splits typically deliver 350–400 CFM per ton with a 18–22 °F coil ΔT.
+  function computeAirflow(sensibleW, latentW, V_m3, area_m2, nPeople, designW) {
+    const C = CONFIG.airflow;
+    const total = sensibleW + latentW;
+    const SHR = total ? sensibleW / total : 1;
+    const qBtu = sensibleW * BTU_PER_W;
+    const dTF = SHR < C.humidSHR ? C.supplyDeltaF_humid : C.supplyDeltaF;
+    const cfm = qBtu / (1.08 * dTF);
+    const tr = wToTR(designW);
+    const cfmPerTon = tr ? cfm / tr : 0;
+    const V_ft3 = V_m3 * 35.3147;
+    const ach = V_ft3 ? cfm * 60 / V_ft3 : 0;
+    const area_ft2 = area_m2 * FT2_PER_M2;
+    const freshCfm = C.freshPerPerson * nPeople + C.freshPerFt2 * area_ft2;
+    // typical indoor unit airflow at nominal size (CFM)
+    const typical = CONFIG.sizes.map(s => ({ ton: s.ton, label: s.label, cfm: Math.round(s.ton * C.unitCfmPerTon) }));
+    let guidance;
+    if (SHR < C.humidSHR) guidance = 'Humid room: keep airflow nearer 350 CFM/ton (medium fan speed) so the coil stays cold enough to pull out moisture. A unit with higher CFM/ton will leave the room clammy.';
+    else if (cfmPerTon > C.unitCfmPerTon * 1.15) guidance = `Dry, sensible-heavy room: the ideal airflow (${Math.round(cfmPerTon)} CFM/ton) is above what indoor units deliver (~${C.unitCfmPerTon}). That is fine: run the fan on High or Turbo on peak afternoons; the coil simply works at a wider temperature difference.`;
+    else guidance = 'Balanced room: a standard 350–400 CFM/ton indoor unit on Auto fan is right.';
+    return { SHR, supplyDeltaF: dTF, cfm, m3h: cfm * 1.699, cfmPerTon, ach, freshCfm, freshM3h: freshCfm * 1.699, typical, guidance };
   }
 
   // ---------- Full calculation ----------
@@ -412,7 +455,7 @@
     return { star, band };
   }
 
-  return { CONFIG, CITIES, defaultInput, calculate, computeCase, select, starFromISEER, electricalAdvice,
+  return { CONFIG, CITIES, defaultInput, calculate, computeCase, computeAirflow, select, starFromISEER, electricalAdvice,
     units: { FT2_PER_M2, FT_PER_M, BTU_PER_W, W_PER_TR, wToTR, toM, toM2 },
     psychro: { sitePressure, humidityRatio, humidityRatioRH } };
 });

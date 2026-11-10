@@ -103,5 +103,19 @@ ok('T18 1.5 ton electrical mentions 4 mm2 and DP', /4 mm²/.test(E.electricalAdv
 ok('Cost: 5-star cheaper than 3-star', rA1.cost.star5.rs_month < rA1.cost.star3.rs_month);
 ok('Cost: Ahmedabad bedroom night 5-star in 700-2500 Rs/month', E.calculate(Object.assign({}, A1, { usage: 'night' })).cost.star5.rs_month > 700 && E.calculate(Object.assign({}, A1, { usage: 'night' })).cost.star5.rs_month < 2500, E.calculate(Object.assign({}, A1, { usage: 'night' })).cost.star5.rs_month);
 
+// T19 heat load sheet rows reconcile with totals
+const sumS = rA1.caseA.rows.reduce((a,r)=>a+r.sensible,0), sumL = rA1.caseA.rows.reduce((a,r)=>a+r.latent,0);
+ok('T19 sheet rows sum to sensible total', near(sumS, rA1.caseA.sensibleW, 1), sumS - rA1.caseA.sensibleW);
+ok('T19 sheet rows sum to latent total', near(sumL, rA1.caseA.latentW, 1), sumL - rA1.caseA.latentW);
+ok('T19 A1 has roof, 2 wall, glass rows', rA1.caseA.rows.filter(r=>r.group==='Walls').length===2 && rA1.caseA.rows.some(r=>r.group==='Roof') && rA1.caseA.rows.filter(r=>r.group==='Glass').length===2);
+// T20 airflow
+const af = rA1.caseA.airflow;
+console.log('A1 airflow CFM', af.cfm.toFixed(0), 'CFM/ton', af.cfmPerTon.toFixed(0), 'ACH', af.ach.toFixed(1), 'fresh', af.freshCfm.toFixed(0));
+ok('T20 CFM formula: 3477 W sensible -> ~549 CFM at 20F', near(af.cfm, rA1.caseA.sensibleW*3.412/(1.08*20), 1));
+ok('T20 CFM/ton in plausible 300-520 band', af.cfmPerTon > 300 && af.cfmPerTon < 520, af.cfmPerTon);
+ok('T20 humid room uses 18F and lower CFM/ton', rC.caseB.airflow.supplyDeltaF===18 && rC.caseB.airflow.SHR < 0.78);
+ok('T20 fresh air 2 people 120 sqft = 18.6 CFM', near(af.freshCfm, 7.5*2+0.03*120, 0.2), af.freshCfm);
+ok('T20 air changes from supply ~ 20-35', af.ach > 15 && af.ach < 40, af.ach);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
