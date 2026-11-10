@@ -202,7 +202,7 @@ details{margin-top:10px} summary{cursor:pointer;font-weight:600;font-size:.9rem;
     </div>
     <div id="customBox" hidden></div>
     <p class="small" id="cityNote"></p>
-    <p class="small">* approximate or proxy weather data.</p>
+    <p class="small">* nearest-station proxy or estimated weather; unmarked cities have their own ASHRAE 2021 station record.</p>
   </div>
 
   <div class="card">
@@ -376,7 +376,7 @@ details{margin-top:10px} summary{cursor:pointer;font-weight:600;font-size:.9rem;
 
   <details class="card">
     <summary>How this is calculated</summary>
-    <p class="small">Simplified ASHRAE/ISHRAE room heat balance: wall and roof conduction with solar-equivalent temperature differences, glass solar gain with shading factors, people, lights, appliances, kitchen spill, and air leakage (sensible and latent), plus a 10 % safety factor. Run for the city's peak dry-bulb design day, a monsoon humid day, and optionally a +3 °C heat wave; the largest wins. Wall U-values follow BEE Eco-Niwas Samhita figures; city design temperatures follow ASHRAE 0.4 % data. Inverter sizes are accepted between 90 % and 125 % of the load; fixed-speed between 100 % and 115 %. Vadodara, Rajkot, Chandigarh and Kochi use proxy or estimated weather. This is a household guide, not an engineering certificate.</p>
+    <p class="small">Simplified ASHRAE/ISHRAE room heat balance: wall and roof conduction with solar-equivalent temperature differences, glass solar gain with shading factors, people, lights, appliances, kitchen spill, and air leakage (sensible and latent), plus a 10 % safety factor. Run for the city's peak dry-bulb design day, a monsoon humid day, and optionally a +3 °C heat wave; the largest wins. Wall U-values follow BEE Eco-Niwas Samhita figures; city design temperatures are ASHRAE Handbook 2021 values (annual 0.4 % dry-bulb with coincident wet-bulb for the peak case; annual 0.4 % wet-bulb with coincident dry-bulb for the humid case). Inverter sizes are accepted between 90 % and 125 % of the load; fixed-speed between 100 % and 115 %. Cities marked * borrow the nearest station or are estimated. This is a household guide, not an engineering certificate.</p>
   </details>
 </aside>
 </div>
@@ -508,77 +508,92 @@ details{margin-top:10px} summary{cursor:pointer;font-weight:600;font-size:.9rem;
     }
   };
 
-  // city: zone, Case A DB/WB, Case B DB/WB, altitude, state, flags
+  // Case A: ASHRAE 2021 annual cooling 0.4% DB / mean coincident WB. Case B (humid): ASHRAE annual 0.4% WB / mean coincident DB.
+  // src 'ashrae2021' = read from ashrae-meteo.info on 2026-11-10. proxy = station within ~100 km, same climate. approx = Case A hand-estimated, Case B from nearest station. estimated = no station nearby.
   const CITIES = [
-    { name: 'Delhi',        state: 'Delhi',          zone: 'Composite',  A: [42.3, 23.2], B: [35, 28],   alt: 216 },
-    { name: 'Jaipur',       state: 'Rajasthan',      zone: 'Composite',  A: [42.7, 20.9], B: [34, 26],   alt: 431 },
-    { name: 'Ahmedabad',    state: 'Gujarat',        zone: 'Hot-dry',    A: [43.1, 23.0], B: [34, 27],   alt: 53 },
-    { name: 'Vadodara',     state: 'Gujarat',        zone: 'Hot-dry',    A: [43.1, 23.0], B: [34, 27],   alt: 35, proxy: 'Ahmedabad' },
-    { name: 'Surat',        state: 'Gujarat',        zone: 'Warm-humid', A: [38.2, 22.6], B: [33, 27.5], alt: 13 },
-    { name: 'Rajkot',       state: 'Gujarat',        zone: 'Hot-dry',    A: [43.1, 23.0], B: [34, 27],   alt: 128, proxy: 'Ahmedabad' },
-    { name: 'Mumbai',       state: 'Maharashtra',    zone: 'Warm-humid', A: [36.0, 22.7], B: [33, 27.5], alt: 14 },
-    { name: 'Pune',         state: 'Maharashtra',    zone: 'Temperate',  A: [38.5, 19.9], B: [31, 24],   alt: 560 },
-    { name: 'Nagpur',       state: 'Maharashtra',    zone: 'Composite',  A: [44.2, 22.6], B: [34, 27],   alt: 310 },
-    { name: 'Chennai',      state: 'Tamil Nadu',     zone: 'Warm-humid', A: [39.0, 26.0], B: [35, 28],   alt: 16 },
-    { name: 'Kolkata',      state: 'West Bengal',    zone: 'Warm-humid', A: [37.9, 27.3], B: [34, 28.5], alt: 9 },
-    { name: 'Bengaluru',    state: 'Karnataka',      zone: 'Temperate',  A: [34.3, 20.0], B: [30, 23],   alt: 920 },
-    { name: 'Hyderabad',    state: 'Telangana',      zone: 'Composite',  A: [41.0, 22.0], B: [33, 25],   alt: 542 },
-    { name: 'Lucknow',      state: 'Uttar Pradesh',  zone: 'Composite',  A: [42.8, 23.4], B: [35, 28],   alt: 123 },
-    { name: 'Bhopal',       state: 'Madhya Pradesh', zone: 'Composite',  A: [42.0, 21.9], B: [33, 26],   alt: 527 },
-    { name: 'Indore',       state: 'Madhya Pradesh', zone: 'Composite',  A: [40.8, 20.9], B: [32, 25],   alt: 553 },
-    { name: 'Chandigarh',   state: 'Punjab/Chandigarh', zone: 'Composite', A: [42, 25],   B: [35, 28],   alt: 350, estimated: true },
-    { name: 'Kochi',        state: 'Kerala',         zone: 'Warm-humid', A: [35, 28],     B: [32, 27.5], alt: 0, estimated: true },
-    { name: 'Guwahati',     state: 'Assam',          zone: 'Warm-humid', A: [35.2, 27.8], B: [33, 28],   alt: 55 },
-    { name: 'Patna',        state: 'Bihar',          zone: 'Composite',  A: [41.3, 23.2], B: [35, 28],   alt: 53 },
-    { name: 'Visakhapatnam',state: 'Andhra Pradesh', zone: 'Warm-humid', A: [34.0, 27.1], B: [33, 28],   alt: 3 },
-    // --- Batch 2 (Nov 2026). approx: general climate-table values, not a verified station record; proxy: nearest listed station.
-    { name: 'Gurugram',     state: 'Haryana',        zone: 'Composite',  A: [43.8, 22.2], B: [35, 28],   alt: 220 },
-    { name: 'Noida / Ghaziabad', state: 'Uttar Pradesh', zone: 'Composite', A: [42.3, 23.2], B: [35, 28], alt: 200, proxy: 'Delhi' },
-    { name: 'Faridabad',    state: 'Haryana',        zone: 'Composite',  A: [42.3, 23.2], B: [35, 28],   alt: 200, proxy: 'Delhi' },
-    { name: 'Meerut',       state: 'Uttar Pradesh',  zone: 'Composite',  A: [42.3, 23.2], B: [35, 28],   alt: 225, proxy: 'Delhi' },
-    { name: 'Agra',         state: 'Uttar Pradesh',  zone: 'Composite',  A: [43.5, 23.0], B: [35, 28],   alt: 170, approx: true },
-    { name: 'Kanpur',       state: 'Uttar Pradesh',  zone: 'Composite',  A: [43.0, 23.5], B: [35, 28],   alt: 126, approx: true },
-    { name: 'Prayagraj',    state: 'Uttar Pradesh',  zone: 'Composite',  A: [43.5, 23.5], B: [35, 28],   alt: 98,  approx: true },
-    { name: 'Varanasi',     state: 'Uttar Pradesh',  zone: 'Composite',  A: [42.5, 24.0], B: [35, 28],   alt: 81,  approx: true },
-    { name: 'Dehradun',     state: 'Uttarakhand',    zone: 'Composite',  A: [38.0, 22.5], B: [32, 26],   alt: 640, approx: true },
-    { name: 'Amritsar',     state: 'Punjab/Chandigarh', zone: 'Composite', A: [42.5, 24.0], B: [35, 28], alt: 234, approx: true },
-    { name: 'Ludhiana',     state: 'Punjab/Chandigarh', zone: 'Composite', A: [42.6, 24.5], B: [35, 28], alt: 244, approx: true },
-    { name: 'Jodhpur',      state: 'Rajasthan',      zone: 'Hot-dry',    A: [43.5, 21.5], B: [35, 26],   alt: 224, approx: true },
-    { name: 'Udaipur',      state: 'Rajasthan',      zone: 'Hot-dry',    A: [41.0, 20.5], B: [33, 25],   alt: 582, approx: true },
-    { name: 'Kota',         state: 'Rajasthan',      zone: 'Hot-dry',    A: [44.0, 21.5], B: [34, 27],   alt: 273, approx: true },
-    { name: 'Gwalior',      state: 'Madhya Pradesh', zone: 'Composite',  A: [44.0, 22.0], B: [34, 27],   alt: 212, approx: true },
-    { name: 'Jabalpur',     state: 'Madhya Pradesh', zone: 'Composite',  A: [42.5, 22.5], B: [33, 27],   alt: 411, approx: true },
-    { name: 'Srinagar',     state: 'Jammu & Kashmir', zone: 'Cold',      A: [33.5, 20.0], B: [30, 22],   alt: 1587, approx: true },
-    { name: 'Jammu',        state: 'Jammu & Kashmir', zone: 'Composite', A: [42.0, 23.0], B: [34, 27.5], alt: 327, approx: true },
-    { name: 'Shimla',       state: 'Himachal Pradesh', zone: 'Cold',     A: [28.0, 17.0], B: [25, 20],   alt: 2200, estimated: true },
-    { name: 'Thane / Navi Mumbai', state: 'Maharashtra', zone: 'Warm-humid', A: [37.5, 23.0], B: [33, 27.5], alt: 10, estimated: true },
-    { name: 'Nashik',       state: 'Maharashtra',    zone: 'Composite',  A: [39.5, 20.5], B: [31, 24.5], alt: 600, approx: true },
-    { name: 'Aurangabad',   state: 'Maharashtra',    zone: 'Hot-dry',    A: [41.0, 21.0], B: [32, 25],   alt: 580, approx: true },
-    { name: 'Solapur',      state: 'Maharashtra',    zone: 'Hot-dry',    A: [41.5, 21.5], B: [32, 25],   alt: 460, approx: true },
-    { name: 'Kolhapur',     state: 'Maharashtra',    zone: 'Composite',  A: [38.5, 22.0], B: [30, 25],   alt: 570, approx: true },
-    { name: 'Panaji (Goa)', state: 'Goa',            zone: 'Warm-humid', A: [34.5, 26.5], B: [32, 27.5], alt: 10,  approx: true },
-    { name: 'Bhavnagar',    state: 'Gujarat',        zone: 'Hot-dry',    A: [41.5, 24.5], B: [34, 27.5], alt: 24,  approx: true },
-    { name: 'Jamnagar',     state: 'Gujarat',        zone: 'Hot-dry',    A: [40.0, 25.0], B: [34, 27.5], alt: 20,  estimated: true },
-    { name: 'Gandhinagar',  state: 'Gujarat',        zone: 'Hot-dry',    A: [43.1, 23.0], B: [34, 27],   alt: 81,  proxy: 'Ahmedabad' },
-    { name: 'Coimbatore',   state: 'Tamil Nadu',     zone: 'Warm-humid', A: [37.0, 22.5], B: [31, 24.5], alt: 410, approx: true },
-    { name: 'Madurai',      state: 'Tamil Nadu',     zone: 'Warm-humid', A: [40.5, 24.5], B: [34, 26.5], alt: 140, approx: true },
-    { name: 'Tiruchirappalli', state: 'Tamil Nadu',  zone: 'Warm-humid', A: [40.5, 24.5], B: [34, 26.5], alt: 88,  approx: true },
-    { name: 'Mysuru',       state: 'Karnataka',      zone: 'Temperate',  A: [36.0, 20.5], B: [30, 23],   alt: 770, approx: true },
-    { name: 'Mangaluru',    state: 'Karnataka',      zone: 'Warm-humid', A: [34.5, 26.5], B: [31, 27.5], alt: 22,  approx: true },
-    { name: 'Hubballi',     state: 'Karnataka',      zone: 'Composite',  A: [39.0, 21.5], B: [30, 24],   alt: 660, approx: true },
-    { name: 'Vijayawada',   state: 'Andhra Pradesh', zone: 'Warm-humid', A: [42.5, 25.0], B: [34, 28],   alt: 23,  approx: true },
-    { name: 'Tirupati',     state: 'Andhra Pradesh', zone: 'Warm-humid', A: [41.5, 24.0], B: [34, 27],   alt: 150, approx: true },
-    { name: 'Thiruvananthapuram', state: 'Kerala',   zone: 'Warm-humid', A: [34.0, 26.5], B: [31, 27],   alt: 64,  approx: true },
-    { name: 'Kozhikode',    state: 'Kerala',         zone: 'Warm-humid', A: [34.5, 26.5], B: [31, 27.5], alt: 10,  estimated: true },
-    { name: 'Raipur',       state: 'Chhattisgarh',   zone: 'Composite',  A: [43.5, 23.0], B: [34, 27.5], alt: 298, approx: true },
-    { name: 'Ranchi',       state: 'Jharkhand',      zone: 'Composite',  A: [39.5, 22.5], B: [32, 26],   alt: 651, approx: true },
-    { name: 'Jamshedpur',   state: 'Jharkhand',      zone: 'Composite',  A: [42.0, 24.0], B: [34, 28],   alt: 135, approx: true },
-    { name: 'Bhubaneswar',  state: 'Odisha',         zone: 'Warm-humid', A: [40.0, 26.0], B: [34, 28.5], alt: 46,  approx: true },
-    { name: 'Cuttack',      state: 'Odisha',         zone: 'Warm-humid', A: [40.0, 26.0], B: [34, 28.5], alt: 36,  proxy: 'Bhubaneswar' },
-    { name: 'Siliguri',     state: 'West Bengal',    zone: 'Warm-humid', A: [35.5, 27.0], B: [33, 28],   alt: 120, estimated: true },
-    { name: 'Shillong',     state: 'Meghalaya',      zone: 'Cold',       A: [27.5, 20.0], B: [25, 21],   alt: 1500, estimated: true },
-    { name: 'Imphal',       state: 'Manipur',        zone: 'Temperate',  A: [32.5, 24.5], B: [30, 25],   alt: 786, estimated: true },
-    { name: 'Agartala',     state: 'Tripura',        zone: 'Warm-humid', A: [36.0, 27.0], B: [33, 28],   alt: 15,  approx: true }
+    { name: 'Delhi', state: 'Delhi', zone: 'Composite', A: [42.3, 23.2], B: [34.6, 28.9], alt: 215, src: 'ashrae2021', wmo: 421820, station: 'New Delhi Safdarjung' },
+    { name: 'Gurugram', state: 'Haryana', zone: 'Composite', A: [43.8, 22.2], B: [33.2, 29.2], alt: 237, src: 'ashrae2021', wmo: 421810, station: 'New Delhi Indira Gandhi Intl', note: 'Palam airport station' },
+    { name: 'Noida / Ghaziabad', state: 'Uttar Pradesh', zone: 'Composite', A: [42.3, 23.2], B: [34.6, 28.9], alt: 200, src: 'ashrae2021', wmo: 421820, station: 'New Delhi Safdarjung', proxy: true },
+    { name: 'Faridabad', state: 'Haryana', zone: 'Composite', A: [43.8, 22.2], B: [33.2, 29.2], alt: 200, src: 'ashrae2021', wmo: 421810, station: 'New Delhi Indira Gandhi Intl', proxy: true },
+    { name: 'Meerut', state: 'Uttar Pradesh', zone: 'Composite', A: [42.3, 23.2], B: [34.6, 28.9], alt: 225, src: 'ashrae2021', wmo: 421820, station: 'New Delhi Safdarjung', proxy: true },
+    { name: 'Hisar', state: 'Haryana', zone: 'Composite', A: [44.5, 23.7], B: [35.4, 29.0], alt: 213, src: 'ashrae2021', wmo: 421310, station: 'Hissar' },
+    { name: 'Chandigarh', state: 'Punjab/Chandigarh', zone: 'Composite', A: [41.8, 24.6], B: [33.9, 29.5], alt: 350, src: 'ashrae2021', wmo: 421010, station: 'Patiala', proxy: true, note: 'Patiala station, 60 km' },
+    { name: 'Ludhiana', state: 'Punjab/Chandigarh', zone: 'Composite', A: [41.8, 24.6], B: [33.9, 29.5], alt: 244, src: 'ashrae2021', wmo: 421010, station: 'Patiala', proxy: true, note: 'Patiala station, 80 km' },
+    { name: 'Amritsar', state: 'Punjab/Chandigarh', zone: 'Composite', A: [42.5, 24.0], B: [33.9, 29.5], alt: 234, src: 'ashrae2021', wmo: 421010, station: 'Patiala', approx: true },
+    { name: 'Jaipur', state: 'Rajasthan', zone: 'Composite', A: [42.7, 20.9], B: [30.8, 27.7], alt: 385, src: 'ashrae2021', wmo: 423480, station: 'Jaipur' },
+    { name: 'Jodhpur', state: 'Rajasthan', zone: 'Hot-dry', A: [42.8, 21.7], B: [32.9, 27.8], alt: 219, src: 'ashrae2021', wmo: 423390, station: 'Jodhpur' },
+    { name: 'Bikaner', state: 'Rajasthan', zone: 'Hot-dry', A: [44.1, 21.6], B: [34.5, 28.1], alt: 224, src: 'ashrae2021', wmo: 421650, station: 'Bikaner' },
+    { name: 'Udaipur', state: 'Rajasthan', zone: 'Hot-dry', A: [41.0, 21.0], B: [32.9, 27.8], alt: 582, src: 'ashrae2021', wmo: 423390, station: 'Jodhpur', approx: true },
+    { name: 'Kota', state: 'Rajasthan', zone: 'Hot-dry', A: [44.0, 22.0], B: [33.6, 28.7], alt: 273, src: 'ashrae2021', wmo: 423610, station: 'Gwalior', approx: true },
+    { name: 'Agra', state: 'Uttar Pradesh', zone: 'Composite', A: [43.8, 23.4], B: [33.6, 28.7], alt: 170, src: 'ashrae2021', wmo: 423610, station: 'Gwalior', proxy: true, note: 'Gwalior station, 110 km' },
+    { name: 'Lucknow', state: 'Uttar Pradesh', zone: 'Composite', A: [42.8, 23.4], B: [34.4, 29.8], alt: 125, src: 'ashrae2021', wmo: 423690, station: 'Lucknow' },
+    { name: 'Kanpur', state: 'Uttar Pradesh', zone: 'Composite', A: [42.8, 23.4], B: [34.4, 29.8], alt: 126, src: 'ashrae2021', wmo: 423690, station: 'Lucknow', proxy: true, note: 'Lucknow station, 75 km' },
+    { name: 'Prayagraj', state: 'Uttar Pradesh', zone: 'Composite', A: [43.5, 24.0], B: [34.4, 29.8], alt: 98, src: 'ashrae2021', wmo: 423690, station: 'Lucknow', approx: true },
+    { name: 'Varanasi', state: 'Uttar Pradesh', zone: 'Composite', A: [42.5, 24.0], B: [34.1, 29.1], alt: 81, src: 'ashrae2021', wmo: 424920, station: 'Patna', approx: true },
+    { name: 'Dehradun', state: 'Uttarakhand', zone: 'Composite', A: [38.0, 22.5], B: [31.0, 27.5], alt: 640, src: 'estimate', estimated: true },
+    { name: 'Gwalior', state: 'Madhya Pradesh', zone: 'Composite', A: [43.8, 23.4], B: [33.6, 28.7], alt: 188, src: 'ashrae2021', wmo: 423610, station: 'Gwalior' },
+    { name: 'Bhopal', state: 'Madhya Pradesh', zone: 'Composite', A: [42.0, 21.9], B: [31.2, 26.3], alt: 524, src: 'ashrae2021', wmo: 426670, station: 'Bhopal' },
+    { name: 'Indore', state: 'Madhya Pradesh', zone: 'Composite', A: [40.8, 20.9], B: [30.5, 25.6], alt: 564, src: 'ashrae2021', wmo: 427540, station: 'Indore Intl' },
+    { name: 'Jabalpur', state: 'Madhya Pradesh', zone: 'Composite', A: [42.4, 20.8], B: [31.0, 26.6], alt: 495, src: 'ashrae2021', wmo: 426750, station: 'Jabalpur' },
+    { name: 'Patna', state: 'Bihar', zone: 'Composite', A: [41.3, 23.2], B: [34.1, 29.1], alt: 52, src: 'ashrae2021', wmo: 424920, station: 'Patna' },
+    { name: 'Ranchi', state: 'Jharkhand', zone: 'Composite', A: [39.5, 22.5], B: [33.6, 28.2], alt: 651, src: 'ashrae2021', wmo: 427980, station: 'Jamshedpur', approx: true },
+    { name: 'Jamshedpur', state: 'Jharkhand', zone: 'Composite', A: [42.1, 22.6], B: [33.6, 28.2], alt: 154, src: 'ashrae2021', wmo: 427980, station: 'Jamshedpur' },
+    { name: 'Raipur', state: 'Chhattisgarh', zone: 'Composite', A: [43.5, 23.5], B: [32.3, 27.9], alt: 298, src: 'ashrae2021', wmo: 428670, station: 'Nagpur Ambedkar Intl', approx: true },
+    { name: 'Jagdalpur', state: 'Chhattisgarh', zone: 'Composite', A: [39.3, 22.9], B: [33.0, 26.6], alt: 553, src: 'ashrae2021', wmo: 430410, station: 'Jagdalpur' },
+    { name: 'Srinagar', state: 'Jammu & Kashmir', zone: 'Cold', A: [33.5, 20.0], B: [29.0, 22.0], alt: 1587, src: 'estimate', estimated: true },
+    { name: 'Jammu', state: 'Jammu & Kashmir', zone: 'Composite', A: [42.0, 23.0], B: [33.9, 29.5], alt: 327, src: 'ashrae2021', wmo: 421010, station: 'Patiala', approx: true },
+    { name: 'Shimla', state: 'Himachal Pradesh', zone: 'Cold', A: [28.0, 17.0], B: [25.0, 20.0], alt: 2200, src: 'estimate', estimated: true },
+    { name: 'Ahmedabad', state: 'Gujarat', zone: 'Hot-dry', A: [43.1, 23.0], B: [33.8, 28.6], alt: 58, src: 'ashrae2021', wmo: 426470, station: 'Ahmedabad' },
+    { name: 'Gandhinagar', state: 'Gujarat', zone: 'Hot-dry', A: [43.1, 23.0], B: [33.8, 28.6], alt: 81, src: 'ashrae2021', wmo: 426470, station: 'Ahmedabad', proxy: true },
+    { name: 'Vadodara', state: 'Gujarat', zone: 'Hot-dry', A: [43.1, 23.0], B: [33.8, 28.6], alt: 35, src: 'ashrae2021', wmo: 426470, station: 'Ahmedabad', proxy: true, note: 'Ahmedabad station, 100 km' },
+    { name: 'Surat', state: 'Gujarat', zone: 'Warm-humid', A: [38.2, 22.6], B: [32.1, 28.4], alt: 12, src: 'ashrae2021', wmo: 428400, station: 'Surat' },
+    { name: 'Rajkot', state: 'Gujarat', zone: 'Hot-dry', A: [41.4, 22.1], B: [32.7, 27.7], alt: 134, src: 'ashrae2021', wmo: 427370, station: 'Rajkot' },
+    { name: 'Bhuj', state: 'Gujarat', zone: 'Hot-dry', A: [40.9, 23.2], B: [34.0, 28.6], alt: 82, src: 'ashrae2021', wmo: 426340, station: 'Bhuj' },
+    { name: 'Bhavnagar', state: 'Gujarat', zone: 'Hot-dry', A: [41.0, 24.5], B: [32.7, 27.7], alt: 24, src: 'ashrae2021', wmo: 427370, station: 'Rajkot', approx: true },
+    { name: 'Jamnagar', state: 'Gujarat', zone: 'Hot-dry', A: [40.5, 24.5], B: [32.7, 27.7], alt: 20, src: 'ashrae2021', wmo: 427370, station: 'Rajkot', approx: true },
+    { name: 'Veraval', state: 'Gujarat', zone: 'Warm-humid', A: [34.9, 23.6], B: [32.2, 29.3], alt: 8, src: 'ashrae2021', wmo: 429090, station: 'Veraval' },
+    { name: 'Mumbai', state: 'Maharashtra', zone: 'Warm-humid', A: [36.0, 22.7], B: [31.2, 28.0], alt: 11, src: 'ashrae2021', wmo: 430030, station: 'Mumbai Shivaji Intl' },
+    { name: 'Thane / Navi Mumbai', state: 'Maharashtra', zone: 'Warm-humid', A: [36.0, 22.7], B: [31.2, 28.0], alt: 10, src: 'ashrae2021', wmo: 430030, station: 'Mumbai Shivaji Intl', proxy: true },
+    { name: 'Pune', state: 'Maharashtra', zone: 'Temperate', A: [38.5, 19.9], B: [30.0, 24.7], alt: 558, src: 'ashrae2021', wmo: 430630, station: 'Pune' },
+    { name: 'Nashik', state: 'Maharashtra', zone: 'Composite', A: [39.5, 20.5], B: [30.0, 24.7], alt: 600, src: 'ashrae2021', wmo: 430630, station: 'Pune', approx: true },
+    { name: 'Aurangabad', state: 'Maharashtra', zone: 'Hot-dry', A: [40.3, 22.8], B: [35.7, 26.9], alt: 583, src: 'ashrae2021', wmo: 430140, station: 'Aurangabad' },
+    { name: 'Solapur', state: 'Maharashtra', zone: 'Hot-dry', A: [41.3, 22.3], B: [33.0, 26.5], alt: 483, src: 'ashrae2021', wmo: 431170, station: 'Solapur' },
+    { name: 'Kolhapur', state: 'Maharashtra', zone: 'Composite', A: [38.5, 21.5], B: [29.6, 24.3], alt: 570, src: 'ashrae2021', wmo: 431980, station: 'Belgaum', approx: true },
+    { name: 'Nagpur', state: 'Maharashtra', zone: 'Composite', A: [44.2, 22.6], B: [32.3, 27.9], alt: 315, src: 'ashrae2021', wmo: 428670, station: 'Nagpur Ambedkar Intl' },
+    { name: 'Ratnagiri', state: 'Maharashtra', zone: 'Warm-humid', A: [34.4, 23.2], B: [30.9, 27.6], alt: 67, src: 'ashrae2021', wmo: 431100, station: 'Ratnagiri' },
+    { name: 'Panaji (Goa)', state: 'Goa', zone: 'Warm-humid', A: [34.2, 25.9], B: [32.1, 28.2], alt: 58, src: 'ashrae2021', wmo: 431920, station: 'Goa Panaji' },
+    { name: 'Hyderabad', state: 'Telangana', zone: 'Composite', A: [41.0, 22.0], B: [31.8, 26.4], alt: 531, src: 'ashrae2021', wmo: 431280, station: 'Hyderabad Begumpet' },
+    { name: 'Kurnool', state: 'Andhra Pradesh', zone: 'Composite', A: [41.6, 23.0], B: [33.8, 26.3], alt: 281, src: 'ashrae2021', wmo: 432130, station: 'Kurnool' },
+    { name: 'Anantapur', state: 'Andhra Pradesh', zone: 'Composite', A: [40.5, 23.5], B: [34.7, 27.2], alt: 364, src: 'ashrae2021', wmo: 432370, station: 'Anantapur' },
+    { name: 'Vijayawada', state: 'Andhra Pradesh', zone: 'Warm-humid', A: [43.0, 25.5], B: [34.8, 29.4], alt: 23, src: 'ashrae2021', wmo: 431850, station: 'Machilipatnam', approx: true },
+    { name: 'Machilipatnam', state: 'Andhra Pradesh', zone: 'Warm-humid', A: [40.6, 26.7], B: [34.8, 29.4], alt: 3, src: 'ashrae2021', wmo: 431850, station: 'Machilipatnam' },
+    { name: 'Kakinada', state: 'Andhra Pradesh', zone: 'Warm-humid', A: [39.6, 27.4], B: [34.7, 29.5], alt: 8, src: 'ashrae2021', wmo: 431890, station: 'Kakinada' },
+    { name: 'Nellore', state: 'Andhra Pradesh', zone: 'Warm-humid', A: [40.9, 27.1], B: [36.0, 29.1], alt: 20, src: 'ashrae2021', wmo: 432450, station: 'Nellore' },
+    { name: 'Tirupati', state: 'Andhra Pradesh', zone: 'Warm-humid', A: [41.5, 24.5], B: [36.0, 29.1], alt: 150, src: 'ashrae2021', wmo: 432450, station: 'Nellore', approx: true },
+    { name: 'Visakhapatnam', state: 'Andhra Pradesh', zone: 'Warm-humid', A: [34.0, 27.1], B: [32.3, 29.3], alt: 66, src: 'ashrae2021', wmo: 431500, station: 'Vishakhapatnam Cwc' },
+    { name: 'Bengaluru', state: 'Karnataka', zone: 'Temperate', A: [34.3, 20.0], B: [29.1, 23.7], alt: 921, src: 'ashrae2021', wmo: 432950, station: 'Bengaluru' },
+    { name: 'Mysuru', state: 'Karnataka', zone: 'Temperate', A: [35.5, 20.5], B: [29.1, 23.7], alt: 770, src: 'ashrae2021', wmo: 432950, station: 'Bengaluru', approx: true },
+    { name: 'Mangaluru', state: 'Karnataka', zone: 'Warm-humid', A: [34.4, 24.9], B: [31.4, 27.2], alt: 103, src: 'ashrae2021', wmo: 432840, station: 'Mangalore Intl' },
+    { name: 'Hubballi', state: 'Karnataka', zone: 'Composite', A: [37.6, 20.4], B: [30.2, 25.4], alt: 660, src: 'ashrae2021', wmo: 432010, station: 'Gadag', proxy: true, note: 'Gadag station, 60 km' },
+    { name: 'Belagavi', state: 'Karnataka', zone: 'Temperate', A: [36.5, 19.4], B: [29.6, 24.3], alt: 758, src: 'ashrae2021', wmo: 431980, station: 'Belgaum' },
+    { name: 'Chitradurga', state: 'Karnataka', zone: 'Temperate', A: [36.7, 20.8], B: [31.0, 25.5], alt: 733, src: 'ashrae2021', wmo: 432330, station: 'Chitradurga' },
+    { name: 'Chennai', state: 'Tamil Nadu', zone: 'Warm-humid', A: [39.0, 26.0], B: [33.3, 28.5], alt: 16, src: 'ashrae2021', wmo: 432790, station: 'Chennai Intl' },
+    { name: 'Coimbatore', state: 'Tamil Nadu', zone: 'Warm-humid', A: [36.7, 22.2], B: [31.3, 25.7], alt: 404, src: 'ashrae2021', wmo: 433210, station: 'Coimbatore Intl' },
+    { name: 'Madurai', state: 'Tamil Nadu', zone: 'Warm-humid', A: [40.5, 24.5], B: [35.0, 27.7], alt: 140, src: 'ashrae2021', wmo: 433440, station: 'Tiruchirappalli', approx: true },
+    { name: 'Tiruchirappalli', state: 'Tamil Nadu', zone: 'Warm-humid', A: [39.2, 26.0], B: [35.0, 27.7], alt: 88, src: 'ashrae2021', wmo: 433440, station: 'Tiruchirappalli' },
+    { name: 'Cuddalore / Puducherry', state: 'Tamil Nadu', zone: 'Warm-humid', A: [37.9, 27.0], B: [33.9, 29.2], alt: 12, src: 'ashrae2021', wmo: 433290, station: 'Cuddalore' },
+    { name: 'Kochi', state: 'Kerala', zone: 'Warm-humid', A: [34.5, 27.0], B: [33.9, 29.0], alt: 5, src: 'ashrae2021', wmo: 433140, station: 'Kozhikode', approx: true, note: 'between Kozhikode and Thiruvananthapuram stations' },
+    { name: 'Kozhikode', state: 'Kerala', zone: 'Warm-humid', A: [35.2, 28.2], B: [33.9, 29.0], alt: 5, src: 'ashrae2021', wmo: 433140, station: 'Kozhikode' },
+    { name: 'Thiruvananthapuram', state: 'Kerala', zone: 'Warm-humid', A: [34.2, 26.2], B: [31.9, 28.0], alt: 64, src: 'ashrae2021', wmo: 433710, station: 'Thiruvananthapuram' },
+    { name: 'Kolkata', state: 'West Bengal', zone: 'Warm-humid', A: [37.9, 27.3], B: [34.7, 29.7], alt: 5, src: 'ashrae2021', wmo: 428090, station: 'Kolkata Bose Intl' },
+    { name: 'Siliguri', state: 'West Bengal', zone: 'Warm-humid', A: [35.5, 27.0], B: [33.3, 29.5], alt: 120, src: 'ashrae2021', wmo: 424100, station: 'Guwahati Intl', estimated: true },
+    { name: 'Bhubaneswar', state: 'Odisha', zone: 'Warm-humid', A: [39.3, 27.3], B: [34.8, 29.7], alt: 42, src: 'ashrae2021', wmo: 429710, station: 'Bhubaneshwar' },
+    { name: 'Cuttack', state: 'Odisha', zone: 'Warm-humid', A: [39.3, 27.3], B: [34.8, 29.7], alt: 36, src: 'ashrae2021', wmo: 429710, station: 'Bhubaneshwar', proxy: true },
+    { name: 'Balasore', state: 'Odisha', zone: 'Warm-humid', A: [37.6, 27.0], B: [34.3, 29.4], alt: 20, src: 'ashrae2021', wmo: 428950, station: 'Balasore' },
+    { name: 'Guwahati', state: 'Assam', zone: 'Warm-humid', A: [35.2, 27.8], B: [33.3, 29.5], alt: 49, src: 'ashrae2021', wmo: 424100, station: 'Guwahati Intl' },
+    { name: 'Shillong', state: 'Meghalaya', zone: 'Cold', A: [27.5, 20.0], B: [25.0, 21.0], alt: 1500, src: 'estimate', estimated: true },
+    { name: 'Imphal', state: 'Manipur', zone: 'Temperate', A: [32.5, 24.5], B: [30.0, 25.0], alt: 786, src: 'estimate', estimated: true },
+    { name: 'Agartala', state: 'Tripura', zone: 'Warm-humid', A: [35.1, 27.0], B: [33.1, 29.0], alt: 14, src: 'ashrae2021', wmo: 427240, station: 'Agartala' }
   ];
 
   // ---------- Units ----------
@@ -865,8 +880,9 @@ details{margin-top:10px} summary{cursor:pointer;font-weight:600;font-size:.9rem;
     if (inp.acType === 'fixed') w.push({ level: 'med', text: `A fixed-speed unit loses roughly ${Math.round(CONFIG.fixed.derateK * Math.max(0, A.DB - 35) * 100)}% capacity at ${A.DB} °C ambient. Inverters hold capacity better and cost less to run.` });
     if (inp.kitchen === 'open') w.push({ level: 'med', text: 'An open kitchen adds roughly 0.4 ton of cooling load. Keep the exhaust/chimney running while cooking.' });
     if (Math.abs(tr - areaRuleTR) / areaRuleTR > 0.4) w.push({ level: 'info', text: `Dealer rule of thumb (area ÷ 120) says ${areaRuleTR.toFixed(1)} ton; our calculation says ${tr.toFixed(2)} ton. Rules of thumb ignore roof, orientation and climate.` });
-    if (city && (city.proxy || city.estimated)) w.push({ level: 'info', text: `Climate data for ${city.name} is ${city.proxy ? 'a proxy from ' + city.proxy : 'estimated'} (no nearby weather station). Results may vary by ±5%.` });
-    else if (city && city.approx) w.push({ level: 'info', text: `Design weather for ${city.name} comes from a general climate table, not a verified station record. Expect ±1–2 °C, about ±5% on the load.` });
+    if (city && city.proxy) w.push({ level: 'info', text: `Weather for ${city.name} uses the nearest ASHRAE station (${city.station}${city.note ? ', ' + city.note.replace(/^[^,]*station, /, '') : ''}). Usually within ±1 °C.` });
+    else if (city && city.approx) w.push({ level: 'info', text: `Peak design temperature for ${city.name} is an estimate (no station in the city); the humid case comes from ${city.station}. Expect ±1–2 °C, about ±5% on the load.` });
+    else if (city && city.estimated) w.push({ level: 'info', text: `Weather for ${city.name} is estimated; there is no ASHRAE station nearby. Results may vary by ±5–10%.` });
     if (!city) w.push({ level: 'info', text: 'You entered your own climate. The result is only as good as the peak temperature you typed; check it against the IMD normal for your town.' });
     if (/Cold/.test(zone)) w.push({ level: 'low', text: 'Cold-zone city: summers are short. A 0.75–1 ton inverter usually covers a bedroom, and a model with heating mode is worth considering.' });
     if (inp.setpoint < 24) w.push({ level: 'low', text: 'Setpoints below 24 °C raise bills ~6% per degree. BEE recommends 24 °C; with a fan, 26 °C feels the same.' });
@@ -1028,7 +1044,7 @@ function syncInputs(){
   const a=state.lengthFt*state.widthFt; $('areaNote').textContent=`Floor area ${a.toFixed(0)} sq ft (${(a/E.units.FT2_PER_M2).toFixed(1)} m²). Typical rooms are 80–400 sq ft.`;
   $('roomDims').textContent=`${state.lengthFt.toFixed(0)} × ${state.widthFt.toFixed(0)} ft`;
   const city=state.customClimate?null:E.CITIES.find(c=>c.name===state.city);
-  $('cityNote').textContent = state.customClimate ? `Custom climate: ${custom.zone}, design ${state.customClimate.A[0]} °C / ${state.customClimate.A[1]} °C wet-bulb; monsoon check ${state.customClimate.B[0]}/${state.customClimate.B[1]} °C.` : city ? `${city.name}: design day ${city.A[0]} °C dry-bulb / ${city.A[1]} °C wet-bulb; monsoon check ${city.B[0]}/${city.B[1]} °C; ${city.alt} m above sea level.${city.proxy?' Weather is a proxy from '+city.proxy+'.':city.estimated?' Weather is estimated.':''}` : '';
+  $('cityNote').textContent = state.customClimate ? `Custom climate: ${custom.zone}, design ${state.customClimate.A[0]} °C / ${state.customClimate.A[1]} °C wet-bulb; humid check ${state.customClimate.B[0]}/${state.customClimate.B[1]} °C.` : city ? `${city.name}: peak ${city.A[0]} °C dry-bulb / ${city.A[1]} °C wet-bulb; humid case ${city.B[0]} °C / ${city.B[1]} °C wet-bulb; ${city.alt} m above sea level. ${city.src==='ashrae2021' ? 'Source: ASHRAE 2021 station '+city.station+(city.proxy?' (nearest, used as proxy)':city.approx?' (humid case only; peak is estimated)':'')+'.' : 'Estimated; no ASHRAE station nearby.'}` : '';
 }
 
 const fmtW=w=> w>=1000 ? (w/1000).toFixed(2)+' kW' : Math.round(w)+' W';
@@ -1161,7 +1177,7 @@ function setMode(m){ mode=m; $('quick').hidden = m!=='quick'; $('form').hidden =
   $('modeHint').textContent = m==='quick' ? 'Seven questions, about a minute. Good enough to shortlist a size.' : 'Every wall, window and appliance. Use this before you buy.';
   if(m==='quick') renderQuick(); else render(); }
 $('modeQuick').onclick=()=>setMode('quick'); $('modeFull').onclick=()=>setMode('full');
-$('qRefine').onclick=()=>{ setMode('full'); $('form').scrollIntoView({behavior:'smooth',block:'start'}); };
+$('qRefine').onclick=()=>{ setMode('full'); if($('form').scrollIntoView) $('form').scrollIntoView({behavior:'smooth',block:'start'}); };
 document.querySelectorAll('[data-preset]').forEach(b=> b.addEventListener('click', ()=>{ if(mode==='quick') setMode('full'); }, true));
 
 // Start in quick mode with the Vadodara example

@@ -193,7 +193,7 @@ details{margin-top:10px} summary{cursor:pointer;font-weight:600;font-size:.9rem;
     </div>
     <div id="customBox" hidden></div>
     <p class="small" id="cityNote"></p>
-    <p class="small">* approximate or proxy weather data.</p>
+    <p class="small">* nearest-station proxy or estimated weather; unmarked cities have their own ASHRAE 2021 station record.</p>
   </div>
 
   <div class="card">
@@ -367,7 +367,7 @@ details{margin-top:10px} summary{cursor:pointer;font-weight:600;font-size:.9rem;
 
   <details class="card">
     <summary>How this is calculated</summary>
-    <p class="small">Simplified ASHRAE/ISHRAE room heat balance: wall and roof conduction with solar-equivalent temperature differences, glass solar gain with shading factors, people, lights, appliances, kitchen spill, and air leakage (sensible and latent), plus a 10 % safety factor. Run for the city's peak dry-bulb design day, a monsoon humid day, and optionally a +3 °C heat wave; the largest wins. Wall U-values follow BEE Eco-Niwas Samhita figures; city design temperatures follow ASHRAE 0.4 % data. Inverter sizes are accepted between 90 % and 125 % of the load; fixed-speed between 100 % and 115 %. Vadodara, Rajkot, Chandigarh and Kochi use proxy or estimated weather. This is a household guide, not an engineering certificate.</p>
+    <p class="small">Simplified ASHRAE/ISHRAE room heat balance: wall and roof conduction with solar-equivalent temperature differences, glass solar gain with shading factors, people, lights, appliances, kitchen spill, and air leakage (sensible and latent), plus a 10 % safety factor. Run for the city's peak dry-bulb design day, a monsoon humid day, and optionally a +3 °C heat wave; the largest wins. Wall U-values follow BEE Eco-Niwas Samhita figures; city design temperatures are ASHRAE Handbook 2021 values (annual 0.4 % dry-bulb with coincident wet-bulb for the peak case; annual 0.4 % wet-bulb with coincident dry-bulb for the humid case). Inverter sizes are accepted between 90 % and 125 % of the load; fixed-speed between 100 % and 115 %. Cities marked * borrow the nearest station or are estimated. This is a household guide, not an engineering certificate.</p>
   </details>
 </aside>
 </div>
@@ -491,7 +491,7 @@ function syncInputs(){
   const a=state.lengthFt*state.widthFt; $('areaNote').textContent=`Floor area ${a.toFixed(0)} sq ft (${(a/E.units.FT2_PER_M2).toFixed(1)} m²). Typical rooms are 80–400 sq ft.`;
   $('roomDims').textContent=`${state.lengthFt.toFixed(0)} × ${state.widthFt.toFixed(0)} ft`;
   const city=state.customClimate?null:E.CITIES.find(c=>c.name===state.city);
-  $('cityNote').textContent = state.customClimate ? `Custom climate: ${custom.zone}, design ${state.customClimate.A[0]} °C / ${state.customClimate.A[1]} °C wet-bulb; monsoon check ${state.customClimate.B[0]}/${state.customClimate.B[1]} °C.` : city ? `${city.name}: design day ${city.A[0]} °C dry-bulb / ${city.A[1]} °C wet-bulb; monsoon check ${city.B[0]}/${city.B[1]} °C; ${city.alt} m above sea level.${city.proxy?' Weather is a proxy from '+city.proxy+'.':city.estimated?' Weather is estimated.':''}` : '';
+  $('cityNote').textContent = state.customClimate ? `Custom climate: ${custom.zone}, design ${state.customClimate.A[0]} °C / ${state.customClimate.A[1]} °C wet-bulb; humid check ${state.customClimate.B[0]}/${state.customClimate.B[1]} °C.` : city ? `${city.name}: peak ${city.A[0]} °C dry-bulb / ${city.A[1]} °C wet-bulb; humid case ${city.B[0]} °C / ${city.B[1]} °C wet-bulb; ${city.alt} m above sea level. ${city.src==='ashrae2021' ? 'Source: ASHRAE 2021 station '+city.station+(city.proxy?' (nearest, used as proxy)':city.approx?' (humid case only; peak is estimated)':'')+'.' : 'Estimated; no ASHRAE station nearby.'}` : '';
 }
 
 const fmtW=w=> w>=1000 ? (w/1000).toFixed(2)+' kW' : Math.round(w)+' W';
@@ -624,7 +624,7 @@ function setMode(m){ mode=m; $('quick').hidden = m!=='quick'; $('form').hidden =
   $('modeHint').textContent = m==='quick' ? 'Seven questions, about a minute. Good enough to shortlist a size.' : 'Every wall, window and appliance. Use this before you buy.';
   if(m==='quick') renderQuick(); else render(); }
 $('modeQuick').onclick=()=>setMode('quick'); $('modeFull').onclick=()=>setMode('full');
-$('qRefine').onclick=()=>{ setMode('full'); $('form').scrollIntoView({behavior:'smooth',block:'start'}); };
+$('qRefine').onclick=()=>{ setMode('full'); if($('form').scrollIntoView) $('form').scrollIntoView({behavior:'smooth',block:'start'}); };
 document.querySelectorAll('[data-preset]').forEach(b=> b.addEventListener('click', ()=>{ if(mode==='quick') setMode('full'); }, true));
 
 // Start in quick mode with the Vadodara example

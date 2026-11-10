@@ -6,7 +6,7 @@ A room-by-room air-conditioner sizing tool for Indian homes. Instead of the deal
 
 ## What it covers
 
-- 68 Indian cities grouped by state, each with a peak design dry-bulb / wet-bulb, an indicative monsoon humid case, and an optional +3 °C heat-wave margin. Cities with a verified ASHRAE 0.4 % station record are unmarked; `approx` cities use general climate-table values (±1–2 °C); `proxy` cities borrow the nearest station; `estimated` cities have thin data. A "My city is not listed" option takes a climate zone and peak summer temperature instead.
+- 83 Indian cities grouped by state. Peak case: ASHRAE Handbook 2021 annual 0.4 % dry-bulb with mean coincident wet-bulb. Humid case: annual 0.4 % wet-bulb with coincident dry-bulb. Optional +3 °C heat-wave margin. 49 cities sit on their own ASHRAE station (WMO id stored); 12 `proxy` cities borrow a station within ~100 km; 19 `approx` cities have an estimated peak with the humid case from the nearest station; 4 `estimated` hill or north-east cities have no station nearby. The app badges every non-station city. Station values were read from ashrae-meteo.info (2021 edition, SI) on 10 Nov 2026 and are kept in `climate/stations.txt`. A "My city is not listed" option takes a climate zone and peak summer temperature instead.
 - Quick mode (seven questions) and detailed mode, with a hand-off between them.
 - Wall U-values (9" brick, 4.5" brick, AAC, RCC, concrete block, cavity, laterite) from BEE Eco-Niwas Samhita figures; roof types and terrace finishes including white cool-roof coating.
 - Glass types, window sizes, orientation and shading; people (seated/sleeping), lights, appliances, open or closed kitchen; air leakage.
@@ -32,4 +32,4 @@ node build.js
 
 ## Caveats
 
-Solar-gain increments, kitchen spill, partition ΔT and monsoon design points are tuned engineering estimates, not table values; treat results as ±10 %. City entries flagged `approx`, `proxy` or `estimated` in `engine.js` should be verified against ISHRAE weather data before relying on them for a borderline size choice; the app badges them in the result. This is a household guide, not an engineering certificate.
+Solar-gain increments, kitchen spill, partition ΔT and monsoon design points are tuned engineering estimates, not table values; treat results as ±10 %. City entries flagged `approx` or `estimated` in `engine.js` are the remaining soft spots; the app badges them in the result. This is a household guide, not an engineering certificate.

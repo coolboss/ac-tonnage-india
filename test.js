@@ -90,7 +90,7 @@ const fx = E.calculate(Object.assign({}, B, { acType: 'fixed' }));
 ok('T14 fixed: 1.5 ton flagged oversized for 0.4 TR load', fx.selection.candidates.find(c => c.ton === 1.5).ok === false);
 // T15 missing city / proxy badge
 const vad = E.calculate(Object.assign(d(), { city: 'Vadodara' }));
-ok('T15 proxy climate warning for Vadodara', vad.warnings.some(w => /proxy/i.test(w.text)));
+ok('T15 proxy climate warning for Vadodara', vad.warnings.some(w => /nearest ASHRAE station/i.test(w.text)));
 let threw = false; try { E.calculate(Object.assign(d(), { city: 'Nowhere' })); } catch (e) { threw = true; }
 ok('T15 unknown city throws cleanly', threw);
 // T17 star table versioning
@@ -123,7 +123,9 @@ E.CITIES.forEach(c=>{ if(names.has(c.name)) bad.push('dup '+c.name); names.add(c
   if(!(c.A[0]>=26 && c.A[0]<=47)) bad.push(c.name+' DB'); if(!(c.A[1]>=15 && c.A[1]<=30)) bad.push(c.name+' WB');
   if(c.A[1]>=c.A[0]) bad.push(c.name+' WB>=DB'); if(c.B && c.B[1]>=c.B[0]) bad.push(c.name+' B WB>=DB');
   if(c.B && !(c.B[1] >= c.A[1]-1.5)) bad.push(c.name+' monsoon drier than peak'); if(!E.CONFIG.tariffs[c.state]) bad.push(c.name+' no tariff for '+c.state);
-  if(c.proxy && !E.CITIES.find(x=>x.name===c.proxy)) bad.push(c.name+' bad proxy');
+  if((c.proxy||c.approx) && !c.station) bad.push(c.name+' flagged but no station');
+  if(c.src==='ashrae2021' && !(c.wmo>400000 && c.wmo<440000)) bad.push(c.name+' bad wmo');
+  if(!c.proxy && !c.approx && !c.estimated && c.src!=='ashrae2021') bad.push(c.name+' unflagged without station source');
   if(!/Hot-dry|Composite|Warm-humid|Temperate|Cold/.test(c.zone)) bad.push(c.name+' zone'); });
 ok('T21 city table sane ('+E.CITIES.length+' cities)', bad.length===0, bad.join('; '));
 ok('T21 every city calculates', E.CITIES.every(c=>{ try{ return isFinite(E.calculate(Object.assign(d(),{city:c.name})).designW); }catch(e){ return false; } }));
