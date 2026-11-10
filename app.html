@@ -1,0 +1,469 @@
+<title>AC Tonnage India</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: two-pane instrument — inputs left (scrolling form), live result right (sticky). Stacks on phones. */
+:root{
+  --bg:#f6f3ec; --panel:#ffffff; --panel2:#efebe1; --line:#ddd6c8; --fg:#1f2a2e; --muted:#5f6b70;
+  --accent:#0f6e73; --accent-2:#0b4f53; --accent-soft:#d8ecec; --sun:#d98a2b; --sun-soft:#fbe9d2;
+  --ok:#2f7d4f; --warn:#b4700f; --bad:#b63d2e; --info:#3d5a80;
+  --c-roof:#c7652a; --c-walls:#d98a2b; --c-glass:#e7b85c; --c-part:#9aa5a8; --c-people:#5a8f9e; --c-int:#7d6e9e; --c-infil:#4c7f83; --c-lat:#2f5d8a;
+  --font-display:"Space Grotesk",system-ui,sans-serif; --font-body:"Inter",system-ui,sans-serif;
+  --r:10px; --shadow:0 1px 2px rgba(31,42,46,.06),0 8px 24px rgba(31,42,46,.06);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#15191b; --panel:#1d2326; --panel2:#242b2f; --line:#343d42; --fg:#e8e6df; --muted:#9aa6aa;
+  --accent:#4fb3b8; --accent-2:#7bd0d4; --accent-soft:#17383b; --sun:#e8a657; --sun-soft:#3a2d1c;
+  --ok:#5fbf85; --warn:#e0a24a; --bad:#e36a5a; --info:#7fa6d8;
+  --c-roof:#d97a3f; --c-walls:#e39a44; --c-glass:#efc877; --c-part:#8b979b; --c-people:#6fa8b8; --c-int:#9b8cc0; --c-infil:#5fa0a4; --c-lat:#5d8fc4;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#15191b; --panel:#1d2326; --panel2:#242b2f; --line:#343d42; --fg:#e8e6df; --muted:#9aa6aa;
+  --accent:#4fb3b8; --accent-2:#7bd0d4; --accent-soft:#17383b; --sun:#e8a657; --sun-soft:#3a2d1c;
+  --ok:#5fbf85; --warn:#e0a24a; --bad:#e36a5a; --info:#7fa6d8;
+  --c-roof:#d97a3f; --c-walls:#e39a44; --c-glass:#efc877; --c-part:#8b979b; --c-people:#6fa8b8; --c-int:#9b8cc0; --c-infil:#5fa0a4; --c-lat:#5d8fc4;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.5;margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;line-height:1.15}
+h1{font-size:clamp(1.6rem,3vw,2.2rem);font-weight:700;letter-spacing:-.01em}
+h2{font-size:1.05rem;font-weight:600}
+h3{font-size:.95rem;font-weight:600}
+.eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.wrap{max-width:1180px;margin:0 auto}
+header.top{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;padding-block:28px 20px;border-bottom:1px solid var(--line)}
+header p{margin:6px 0 0;color:var(--muted);max-width:60ch}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:.75rem;font-weight:600;background:var(--accent-soft);color:var(--accent-2)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;margin-top:24px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px;min-width:0}
+.card+.card{margin-top:16px}
+.card h2{display:flex;align-items:center;gap:10px}
+.step{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:.75rem;font-family:var(--font-display);flex:none}
+.hint{color:var(--muted);font-size:.85rem;margin:4px 0 12px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.row.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:.82rem;font-weight:500;color:var(--muted);min-width:0}
+input[type=number],select{font:inherit;font-size:.95rem;color:var(--fg);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;min-width:0;font-variant-numeric:tabular-nums}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.seg{display:inline-flex;flex-wrap:wrap;gap:6px}
+.seg button,.chip{font:inherit;font-size:.85rem;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--fg);cursor:pointer}
+.seg button[aria-pressed=true],.chip[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip{display:inline-flex;align-items:center;gap:6px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+fieldset{border:0;padding:0;margin:0 0 14px;min-width:0}
+legend{font-size:.82rem;font-weight:500;color:var(--muted);margin-bottom:6px;padding:0}
+.unit{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.unit button{font:inherit;font-size:.78rem;padding:4px 10px;border:0;background:var(--panel2);color:var(--fg);cursor:pointer}
+.unit button[aria-pressed=true]{background:var(--accent);color:#fff}
+/* room diagram */
+.room{display:grid;grid-template-columns:48px 1fr 48px;grid-template-rows:40px 120px 40px;gap:6px;max-width:360px;margin:8px auto 4px}
+.room .side{border:1px dashed var(--line);border-radius:8px;display:grid;place-items:center;font-size:.8rem;cursor:pointer;color:var(--muted);user-select:none}
+.room .side[aria-pressed=true]{background:var(--sun-soft);border:1px solid var(--sun);color:var(--fg);font-weight:600}
+.room .floor{background:var(--panel2);border-radius:8px;display:grid;place-items:center;color:var(--muted);font-size:.8rem;text-align:center;padding:8px}
+.wallrow{border:1px solid var(--line);border-radius:8px;padding:12px;margin-top:10px;background:var(--panel2)}
+.wallrow .hd{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.wallrow .hd b{font-family:var(--font-display)}
+.small{font-size:.8rem;color:var(--muted)}
+/* results */
+.result{position:sticky;top:env(safe-area-inset-top,0px)}
+@media (max-width:900px){.result{position:static}}
+.hero{background:linear-gradient(135deg,var(--accent-2),var(--accent));color:#fff;border-radius:var(--r);padding:22px;box-shadow:var(--shadow)}
+.hero .eyebrow{color:rgba(255,255,255,.8)}
+.hero .big{font-family:var(--font-display);font-size:clamp(2rem,5vw,2.8rem);font-weight:700;line-height:1;margin:6px 0 4px;letter-spacing:-.02em}
+.hero .sub{opacity:.92;font-size:.95rem}
+.hero .meta{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:14px;font-size:.85rem;opacity:.95}
+.hero .meta b{font-variant-numeric:tabular-nums}
+.pill{display:inline-block;padding:3px 9px;border-radius:999px;font-size:.72rem;font-weight:600;background:rgba(255,255,255,.18)}
+.sizes{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.size{border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:92px;font-size:.8rem;background:var(--panel2);flex:1 1 92px}
+.size b{display:block;font-family:var(--font-display);font-size:1rem}
+.size.ok{border-color:var(--ok)}
+.size.rec{border-color:var(--accent);background:var(--accent-soft)}
+.size.no{opacity:.55}
+.size .st{display:block;font-size:.72rem;color:var(--muted);margin-top:2px}
+.bar{display:flex;height:22px;border-radius:6px;overflow:hidden;margin:10px 0 8px;background:var(--panel2)}
+.bar span{display:block;height:100%;min-width:0}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px 14px;font-size:.82rem}
+.legend div{display:flex;align-items:center;gap:8px;font-variant-numeric:tabular-nums}
+.legend i{width:10px;height:10px;border-radius:3px;flex:none}
+.legend .v{margin-left:auto;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:.85rem;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+th{font-weight:600;color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em}
+td.n,th.n{text-align:right}
+tr.gov td{font-weight:600;color:var(--accent-2)}
+.tablewrap{overflow-x:auto}
+.warn{display:flex;gap:10px;padding:10px 12px;border-radius:8px;border-left:4px solid var(--info);background:var(--panel2);font-size:.88rem;margin-top:8px}
+.warn.high{border-left-color:var(--bad)} .warn.med{border-left-color:var(--warn)} .warn.low{border-left-color:var(--ok)}
+.whatif{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.whatif .wi{display:flex;gap:10px;align-items:flex-start;padding:10px;border:1px solid var(--line);border-left:3px solid var(--ok);border-radius:8px;background:var(--panel2);font-size:.86rem}
+.whatif .d{color:var(--muted);display:block;font-size:.78rem;font-variant-numeric:tabular-nums}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.88rem}
+.kv dt{color:var(--muted)} .kv dd{margin:0;font-variant-numeric:tabular-nums}
+.cost{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.cost div{background:var(--panel2);border-radius:8px;padding:10px;font-size:.8rem}
+.cost b{display:block;font-family:var(--font-display);font-size:1.15rem;font-variant-numeric:tabular-nums}
+.cost .c5{border-top:3px solid var(--ok)} .cost .c3{border-top:3px solid var(--warn)} .cost .cf{border-top:3px solid var(--bad)}
+details{margin-top:10px} summary{cursor:pointer;font-weight:600;font-size:.9rem;font-family:var(--font-display)}
+.foot{margin-top:28px;color:var(--muted);font-size:.8rem;max-width:80ch}
+.btn{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--fg);cursor:pointer;font-weight:500}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.sm{padding:4px 10px;font-size:.8rem}
+.conf{font-weight:600}
+.conf.High{color:#c9f3e3} .conf.Medium{color:#ffe3a8} .conf.Low{color:#ffc4b8}
+@media (prefers-reduced-motion:no-preference){.bar span{transition:flex-basis .35s ease}}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div>
+    <span class="badge">India · room-by-room heat load</span>
+    <h1 style="margin-top:8px">AC Tonnage India</h1>
+    <p>Find the right air-conditioner size for one room. It uses a proper heat-load calculation for Indian walls, roofs, glass and city weather instead of the dealer's square-foot rule.</p>
+  </div>
+  <div class="seg" role="group" aria-label="Presets">
+    <button type="button" data-preset="vadodara">Vadodara bedroom</button>
+    <button type="button" data-preset="bengaluru">Bengaluru bedroom</button>
+    <button type="button" data-preset="delhi">Delhi living room</button>
+    <button type="button" data-preset="mumbai">Mumbai, kitchen next door</button>
+  </div>
+</header>
+
+<div class="grid">
+<section id="form" aria-label="Inputs">
+
+  <div class="card">
+    <h2><span class="step">1</span> Where and what kind of room</h2>
+    <p class="hint">City sets the design weather. Room type sets how the room is used.</p>
+    <div class="row">
+      <label class="f">City <select id="city"></select></label>
+      <label class="f">Room use <select id="usage">
+        <option value="night">Bedroom, mostly at night</option>
+        <option value="day">Living room / daytime</option>
+        <option value="allday">All day and night</option>
+      </select></label>
+      <label class="f">Comfort setting <select id="setpoint">
+        <option value="24">24 °C (BEE default)</option><option value="25">25 °C</option><option value="26">26 °C with a fan</option><option value="23">23 °C</option><option value="22">22 °C</option>
+      </select></label>
+    </div>
+    <p class="small" id="cityNote"></p>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">2</span> Room size</h2>
+    <p class="hint">Measure the room only, not the whole house. Units: <span class="unit"><button type="button" id="uFt" aria-pressed="true">feet</button><button type="button" id="uM" aria-pressed="false">metres</button></span></p>
+    <div class="row three">
+      <label class="f">Length <input type="number" id="len" min="4" max="60" step="0.5"></label>
+      <label class="f">Width <input type="number" id="wid" min="4" max="60" step="0.5"></label>
+      <label class="f">Ceiling height <input type="number" id="hgt" min="7" max="16" step="0.5"></label>
+    </div>
+    <p class="small" id="areaNote"></p>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">3</span> Floor and roof</h2>
+    <p class="hint">A terrace directly above the room is often the biggest heat source.</p>
+    <fieldset><legend>Which floor is the room on?</legend>
+      <div class="seg" id="floor" role="group">
+        <button type="button" data-v="ground">Ground</button><button type="button" data-v="middle">Middle floor</button><button type="button" data-v="top">Top floor (terrace above)</button>
+      </div></fieldset>
+    <div id="roofBlock">
+      <div class="row">
+        <label class="f">Roof slab <select id="roofType"></select></label>
+        <label class="f">Terrace surface <select id="roofFinish"></select></label>
+      </div>
+      <label class="chip" style="margin-top:10px"><input type="checkbox" id="falseCeiling" style="accent-color:var(--accent)"> False ceiling below the roof</label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">4</span> Outside walls and windows</h2>
+    <p class="hint">Tap the sides of the room that face outdoors (not another room). Then set the direction each one faces. Tip: the evening sun comes from the west.</p>
+    <div class="room" aria-label="Room sides">
+      <div></div><div class="side" data-side="A" role="button" aria-pressed="false" tabindex="0">Side A (length)</div><div></div>
+      <div class="side" data-side="D" role="button" aria-pressed="false" tabindex="0">Side D</div>
+      <div class="floor">Your room<br><span id="roomDims"></span></div>
+      <div class="side" data-side="B" role="button" aria-pressed="false" tabindex="0">Side B</div>
+      <div></div><div class="side" data-side="C" role="button" aria-pressed="false" tabindex="0">Side C (length)</div><div></div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <label class="f">Wall construction <select id="wallType"></select></label>
+      <label class="f">Outside paint colour <select id="wallColour"><option value="light">Light / white</option><option value="medium" selected>Medium</option><option value="dark">Dark</option></select></label>
+    </div>
+    <div id="walls"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">5</span> People, appliances, kitchen</h2>
+    <div class="row">
+      <label class="f">People in the day <input type="number" id="peopleDay" min="0" max="20"></label>
+      <label class="f">People at night <input type="number" id="peopleNight" min="0" max="20"></label>
+      <label class="f">Lighting <select id="lighting"><option value="led">LED</option><option value="cfl">CFL / tube lights</option><option value="none">Negligible</option></select></label>
+    </div>
+    <fieldset style="margin-top:12px"><legend>Appliances usually on in the room</legend><div class="chips" id="appl"></div></fieldset>
+    <fieldset><legend>Kitchen</legend>
+      <div class="seg" id="kitchen" role="group">
+        <button type="button" data-v="none">Not adjacent</button><button type="button" data-v="door">Adjacent, with a door</button><button type="button" data-v="open">Open kitchen in this room</button>
+      </div></fieldset>
+    <fieldset><legend>Air leakage</legend>
+      <div class="seg" id="ach" role="group">
+        <button type="button" data-v="tight">Sealed UPVC windows</button><button type="button" data-v="average">Typical flat</button><button type="button" data-v="leaky">Old wooden frames / gaps</button>
+      </div>
+      <label class="chip" style="margin-top:8px"><input type="checkbox" id="frequentDoor" style="accent-color:var(--accent)"> Main door opens often</label>
+    </fieldset>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">6</span> The AC and your bill</h2>
+    <div class="row">
+      <label class="f">AC type <select id="acType"><option value="inverter">Inverter split (recommended)</option><option value="fixed">Fixed-speed (window / non-inverter)</option></select></label>
+      <label class="f">Hours per day <input type="number" id="hours" min="1" max="24"></label>
+      <label class="f">Electricity rate ₹/unit <input type="number" id="tariff" min="2" max="20" step="0.5"></label>
+    </div>
+    <label class="chip" style="margin-top:10px"><input type="checkbox" id="heatWave" style="accent-color:var(--accent)"> Add heat-wave margin (+3 °C)</label>
+    <p class="small">The margin is on by default for hot-dry and composite cities. Tariff defaults to your state's typical marginal rate; edit it from your bill.</p>
+  </div>
+</section>
+
+<aside class="result" aria-live="polite" aria-label="Result">
+  <div class="hero">
+    <span class="eyebrow">Recommended</span>
+    <div class="big" id="recBig">—</div>
+    <div class="sub" id="recSub"></div>
+    <div class="meta">
+      <span>Design load <b id="mLoad"></b></span>
+      <span>With margin <b id="mHw"></b></span>
+      <span>Confidence <span class="conf" id="mConf"></span></span>
+      <span class="pill" id="mZone"></span>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>Standard sizes compared</h2>
+    <p class="hint">Rated kW is what the label shows. Nameplate "ton" is marketing.</p>
+    <div class="sizes" id="sizes"></div>
+    <p class="small" id="selNote"></p>
+  </div>
+
+  <div class="card">
+    <h2>Where the heat comes from</h2>
+    <p class="hint" id="bdCase"></p>
+    <div class="bar" id="bar"></div>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <div class="card">
+    <h2>Three weather cases</h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Case</th><th class="n">Outdoor</th><th class="n">Sensible</th><th class="n">Moisture</th><th class="n">Load</th></tr></thead>
+      <tbody id="cases"></tbody></table></div>
+    <p class="small">The highest case decides the size. Moisture (latent) load matters in monsoon and coastal weather, not on dry 44 °C afternoons.</p>
+  </div>
+
+  <div class="card">
+    <h2>What if you…</h2>
+    <div class="whatif" id="whatif"></div>
+  </div>
+
+  <div class="card" id="warnCard">
+    <h2>Things to know</h2>
+    <div id="warnings"></div>
+  </div>
+
+  <div class="card">
+    <h2>Running cost</h2>
+    <p class="hint" id="costNote"></p>
+    <div class="cost" id="cost"></div>
+    <p class="small">Estimates for peak summer months. ISEER 5.3 is the 2026 five-star threshold for splits; 4.1 is three-star. Compare labels by ISEER, not stars: a 2025 five-star is a 2026 four-star.</p>
+  </div>
+
+  <div class="card">
+    <h2>Before the electrician comes</h2>
+    <dl class="kv" id="elec"></dl>
+    <details><summary>Installation checklist</summary>
+      <ul class="small" style="margin:8px 0 0;padding-left:18px">
+        <li>Dedicated circuit; never shared with the geyser or kitchen points.</li>
+        <li>Outdoor unit: 30 cm clear behind, 60 cm on the service side, open space in front. Never inside a closed grille box.</li>
+        <li>Keep the copper pipe run short; most 1.5-ton units allow about 15–20 m, 5–10 m without extra gas.</li>
+        <li>Most 2026 inverter ACs work from about 160–280 V without a stabiliser. Add one only if your supply swings outside that.</li>
+        <li>Refrigerant R32 or R290 only. Never top up with a different gas.</li>
+        <li>In hot-dry cities, pick a model that promises full capacity at 43–46 °C.</li>
+      </ul></details>
+  </div>
+
+  <details class="card">
+    <summary>How this is calculated</summary>
+    <p class="small">Simplified ASHRAE/ISHRAE room heat balance: wall and roof conduction with solar-equivalent temperature differences, glass solar gain with shading factors, people, lights, appliances, kitchen spill, and air leakage (sensible and latent), plus a 10 % safety factor. Run for the city's peak dry-bulb design day, a monsoon humid day, and optionally a +3 °C heat wave; the largest wins. Wall U-values follow BEE Eco-Niwas Samhita figures; city design temperatures follow ASHRAE 0.4 % data. Inverter sizes are accepted between 90 % and 125 % of the load; fixed-speed between 100 % and 115 %. Vadodara, Rajkot, Chandigarh and Kochi use proxy or estimated weather. This is a household guide, not an engineering certificate.</p>
+  </details>
+</aside>
+</div>
+
+<p class="foot">Engine v<span id="ver"></span>. Coefficients for solar gain, kitchen spill and monsoon design points are tuned engineering estimates and should be treated as ±10 %.</p>
+</div>
+
+<script>
+/*ENGINE*/
+</script>
+<script>
+(function(){
+const E = window.ACEngine, C = E.CONFIG;
+const $ = id => document.getElementById(id);
+let state = E.defaultInput();
+let unitM = false;
+// side mapping: A,C are "length" sides, B,D width. Engine alternates L,W by index — so order walls A,B,C,D.
+const sideOrder = ['A','B','C','D'];
+let sides = { A: null, B: null, C: null, D: null }; // each: {orient, windows:[...]}
+
+const PRESETS = {
+  vadodara: { ...E.defaultInput(), city:'Vadodara', usage:'night', floor:'top', roofFinish:'grey', lengthFt:12, widthFt:10, sides:{A:{orient:'W',windows:[{areaFt2:16,glass:'single',shades:['curtains']}]},B:{orient:'S',windows:[]},C:null,D:null} },
+  bengaluru: { ...E.defaultInput(), city:'Bengaluru', usage:'night', floor:'middle', lengthFt:12, widthFt:10, sides:{A:{orient:'E',windows:[{areaFt2:16,glass:'single',shades:['curtains']}]},B:null,C:null,D:null} },
+  delhi: { ...E.defaultInput(), city:'Delhi', usage:'day', floor:'middle', lengthFt:16, widthFt:12.5, peopleDay:4, appliances:['fan','tv','router'], ach:'leaky', frequentDoor:false, sides:{A:{orient:'W',windows:[{areaFt2:24,glass:'single',shades:['curtains']}]},B:{orient:'S',windows:[]},C:null,D:null} },
+  mumbai: { ...E.defaultInput(), city:'Mumbai', usage:'night', floor:'middle', lengthFt:12, widthFt:12, heightFt:9.5, kitchen:'door', sides:{A:{orient:'N',windows:[{areaFt2:16,glass:'single',shades:['curtains']}]},B:null,C:null,D:null} }
+};
+
+// ---- populate selects
+function fill(sel, obj, keyLabel){ sel.innerHTML=''; Object.entries(obj).forEach(([k,v])=>{ const o=document.createElement('option'); o.value=k; o.textContent=v[keyLabel||'label']; sel.appendChild(o); }); }
+E.CITIES.slice().sort((a,b)=>a.name.localeCompare(b.name)).forEach(c=>{ const o=document.createElement('option'); o.value=c.name; o.textContent=`${c.name} · ${c.zone}`; $('city').appendChild(o); });
+fill($('roofType'), C.roofs); fill($('roofFinish'), C.roofFinish); fill($('wallType'), C.walls);
+Object.entries(C.appliances).forEach(([k,v])=>{ const b=document.createElement('button'); b.type='button'; b.className='chip'; b.dataset.v=k; b.textContent=`${v.label} · ${v.W} W`; b.setAttribute('aria-pressed','false'); b.onclick=()=>{ const i=state.appliances.indexOf(k); if(i>=0) state.appliances.splice(i,1); else state.appliances.push(k); render(); }; $('appl').appendChild(b); });
+
+function segInit(id, key){ $(id).querySelectorAll('button').forEach(b=> b.onclick=()=>{ state[key]=b.dataset.v; render(); }); }
+segInit('floor','floor'); segInit('kitchen','kitchen'); segInit('ach','ach');
+['city','usage','roofType','roofFinish','wallType','wallColour','lighting','acType'].forEach(id=> $(id).onchange=e=>{ state[id]=e.target.value; if(id==='city'){ state.tariff=null; } render(); });
+$('setpoint').onchange=e=>{ state.setpoint=+e.target.value; render(); };
+$('falseCeiling').onchange=e=>{ state.falseCeiling=e.target.checked; render(); };
+$('frequentDoor').onchange=e=>{ state.frequentDoor=e.target.checked; render(); };
+$('heatWave').onchange=e=>{ state.heatWave=e.target.checked; render(); };
+['peopleDay','peopleNight'].forEach(id=> $(id).oninput=e=>{ state[id]=Math.max(0,+e.target.value||0); render(); });
+$('hours').oninput=e=>{ state.hoursPerDay=Math.min(24,Math.max(1,+e.target.value||8)); render(); };
+$('tariff').oninput=e=>{ state.tariff=+e.target.value||null; render(); };
+const dimIn=(id,key)=> $(id).oninput=e=>{ let v=+e.target.value; if(!v) return; state[key]= unitM ? v*E.units.FT_PER_M : v; render(false); };
+dimIn('len','lengthFt'); dimIn('wid','widthFt'); dimIn('hgt','heightFt');
+$('uFt').onclick=()=>{ unitM=false; render(); }; $('uM').onclick=()=>{ unitM=true; render(); };
+document.querySelectorAll('.room .side').forEach(el=>{ const t=()=>{ const s=el.dataset.side; sides[s]= sides[s] ? null : { orient: s==='A'?'N':s==='B'?'E':s==='C'?'S':'W', windows:[] }; render(); }; el.onclick=t; el.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); t(); } }; });
+document.querySelectorAll('[data-preset]').forEach(b=> b.onclick=()=>{ const p=PRESETS[b.dataset.preset]; sides=JSON.parse(JSON.stringify(p.sides)); state=Object.assign({}, p); delete state.sides; render(); });
+
+// ---- walls UI
+function wallsUI(){
+  const box=$('walls'); box.innerHTML='';
+  sideOrder.forEach(s=>{ const w=sides[s]; if(!w) return;
+    const d=document.createElement('div'); d.className='wallrow';
+    d.innerHTML=`<div class="hd"><b>Side ${s} faces</b><select class="orient" aria-label="Direction side ${s} faces">${Object.keys(C.orient).map(o=>`<option ${o===w.orient?'selected':''}>${o}</option>`).join('')}</select><button type="button" class="btn sm addwin">+ Window</button></div><div class="wins"></div>`;
+    d.querySelector('.orient').onchange=e=>{ w.orient=e.target.value; render(); };
+    d.querySelector('.addwin').onclick=()=>{ w.windows.push({areaFt2:16,glass:'single',shades:['curtains']}); render(); };
+    const wins=d.querySelector('.wins');
+    if(!w.windows.length) wins.innerHTML='<span class="small">No windows on this side.</span>';
+    w.windows.forEach((win,i)=>{
+      const r=document.createElement('div'); r.className='row'; r.style.marginTop='8px';
+      r.innerHTML=`<label class="f">Window size <select class="wsz">
+        <option value="9">Small 3×3 ft</option><option value="16">Standard 4×4 ft</option><option value="24">Large 6×4 ft</option><option value="42">Balcony door 7×6 ft</option><option value="60">Full-height glass 10×6 ft</option></select></label>
+        <label class="f">Glass <select class="wgl">${Object.entries(C.glass).map(([k,v])=>`<option value="${k}" ${k===win.glass?'selected':''}>${v.label}</option>`).join('')}</select></label>
+        <label class="f">Shading <select class="wsh" multiple size="3" title="Hold Ctrl/Cmd to pick more than one">
+          ${[['curtains','Light curtains'],['blackout','Heavy blackout curtains'],['overhang','Balcony / chajja above'],['awning','External awning / screen'],['building','Shaded by building or tree']].map(([k,l])=>`<option value="${k}" ${win.shades.includes(k)?'selected':''}>${l}</option>`).join('')}</select></label>
+        <div style="display:flex;align-items:flex-end"><button type="button" class="btn sm del">Remove</button></div>`;
+      const sz=r.querySelector('.wsz'); sz.value=String(win.areaFt2); if(sz.value!==String(win.areaFt2)) sz.value='16';
+      sz.onchange=e=>{ win.areaFt2=+e.target.value; render(); };
+      r.querySelector('.wgl').onchange=e=>{ win.glass=e.target.value; render(); };
+      r.querySelector('.wsh').onchange=e=>{ win.shades=[...e.target.selectedOptions].map(o=>o.value); render(); };
+      r.querySelector('.del').onclick=()=>{ w.windows.splice(i,1); render(); };
+      wins.appendChild(r);
+    });
+    box.appendChild(d);
+  });
+  if(!Object.values(sides).some(Boolean)) box.innerHTML='<p class="small" style="margin-top:10px">No outside walls selected. Tap a side above. An internal room with no outside wall is possible but unusual.</p>';
+}
+
+function syncInputs(){
+  $('city').value=state.city; $('usage').value=state.usage; $('setpoint').value=String(state.setpoint);
+  const f=v=> unitM ? +(v/E.units.FT_PER_M).toFixed(2) : +v.toFixed(1);
+  $('len').value=f(state.lengthFt); $('wid').value=f(state.widthFt); $('hgt').value=f(state.heightFt);
+  $('uFt').setAttribute('aria-pressed',String(!unitM)); $('uM').setAttribute('aria-pressed',String(unitM));
+  ['len','wid','hgt'].forEach(id=>{ $(id).step= unitM?'0.1':'0.5'; });
+  ['floor','kitchen','ach'].forEach(id=> $(id).querySelectorAll('button').forEach(b=> b.setAttribute('aria-pressed', String(b.dataset.v===state[id]))));
+  $('roofBlock').hidden = state.floor!=='top';
+  $('roofType').value=state.roofType; $('roofFinish').value=state.roofFinish; $('falseCeiling').checked=!!state.falseCeiling;
+  $('wallType').value=state.wallType; $('wallColour').value=state.wallColour; $('lighting').value=state.lighting;
+  $('peopleDay').value=state.peopleDay; $('peopleNight').value=state.peopleNight;
+  $('appl').querySelectorAll('button').forEach(b=> b.setAttribute('aria-pressed', String(state.appliances.includes(b.dataset.v))));
+  $('frequentDoor').checked=!!state.frequentDoor; $('acType').value=state.acType; $('hours').value=state.hoursPerDay;
+  document.querySelectorAll('.room .side').forEach(el=> el.setAttribute('aria-pressed', String(!!sides[el.dataset.side])));
+  const a=state.lengthFt*state.widthFt; $('areaNote').textContent=`Floor area ${a.toFixed(0)} sq ft (${(a/E.units.FT2_PER_M2).toFixed(1)} m²). Typical rooms are 80–400 sq ft.`;
+  $('roomDims').textContent=`${state.lengthFt.toFixed(0)} × ${state.widthFt.toFixed(0)} ft`;
+  const city=E.CITIES.find(c=>c.name===state.city);
+  $('cityNote').textContent = city ? `${city.name}: design day ${city.A[0]} °C dry-bulb / ${city.A[1]} °C wet-bulb; monsoon check ${city.B[0]}/${city.B[1]} °C; ${city.alt} m above sea level.${city.proxy?' Weather is a proxy from '+city.proxy+'.':city.estimated?' Weather is estimated.':''}` : '';
+}
+
+const fmtW=w=> w>=1000 ? (w/1000).toFixed(2)+' kW' : Math.round(w)+' W';
+const fmtTR=w=> E.units.wToTR(w).toFixed(2)+' TR';
+const inr=n=> '₹'+Math.round(n).toLocaleString('en-IN');
+
+function buildInput(){ const inp=Object.assign({}, state); inp.walls = sideOrder.filter(s=>sides[s]).map(s=>sides[s]);
+  // engine alternates length/width by index; map A,C=length, B,D=width by reordering so that index parity matches
+  const lengthSides=['A','C'].filter(s=>sides[s]).map(s=>sides[s]), widthSides=['B','D'].filter(s=>sides[s]).map(s=>sides[s]);
+  const ordered=[]; const n=Math.max(lengthSides.length,widthSides.length)*2;
+  for(let i=0;i<n;i++){ const src = i%2===0 ? lengthSides : widthSides; const w=src.shift(); if(w) ordered.push(w); else ordered.push({orient:'N',windows:[],_empty:true}); }
+  inp.walls = ordered; return inp; }
+// Engine rule: even index = length side, odd = width side. Placeholders marked _empty keep parity and are skipped.
+function calc(inp){ return E.calculate(inp); }
+
+function render(sync=true){
+  if(sync) syncInputs(); wallsUI();
+  const inp=buildInput(); let r;
+  try{ r=calc(inp); }catch(e){ $('recBig').textContent='—'; $('recSub').textContent=e.message; return; }
+  const rec=r.selection.recommended; const C2=C;
+  $('recBig').textContent = rec ? rec.label + (r.input.acType==='fixed'?' fixed-speed':' inverter') : '—';
+  $('recSub').textContent = rec ? `Look for a unit rated about ${(rec.kW*0.96).toFixed(1)}–${(rec.kW*1.04).toFixed(1)} kW cooling${r.selection.acceptable.length>1?`. Also acceptable: ${r.selection.acceptable.filter(c=>c!==rec).map(c=>c.label).join(', ')}.`:'.'}` : '';
+  $('mLoad').textContent=`${fmtW(r.designW)} · ${r.designTR.toFixed(2)} ton`;
+  $('mHw').textContent= r.heatWave ? `${r.heatWaveTR.toFixed(2)} ton` : 'not applied';
+  $('mConf').textContent=r.confidence; $('mConf').className='conf '+r.confidence;
+  $('mZone').textContent=`${r.city?r.city.name:'Custom'} · ${r.zone}`;
+  $('heatWave').checked=r.heatWave;
+  $('tariff').value=r.tariff;
+  // sizes
+  $('sizes').innerHTML = r.selection.candidates.map(c=>`<div class="size ${c===rec?'rec':c.ok?'ok':'no'}"><b>${c.label}</b>${c.kW.toFixed(1)} kW rated<span class="st">${Math.round(c.ratio*100)}% of need · ${c===rec?'Recommended':c.reason}</span></div>`).join('');
+  $('selNote').textContent = r.selection.notes.join(' ');
+  // breakdown of governing case
+  const g = r.governing==='B' ? r.caseB : r.caseA;
+  $('bdCase').textContent = `Based on the ${r.governing==='B'?'monsoon humid day':'peak summer day'} (${g.DB} °C / ${g.WB} °C wet-bulb). Total ${fmtW(g.totalW)} before the 10 % safety margin.`;
+  const parts=[
+    ['Roof', g.sensible.roof, 'var(--c-roof)'], ['Outside walls', g.sensible.walls, 'var(--c-walls)'],
+    ['Windows (sun + heat)', g.sensible.glassSolar+g.sensible.glassCond, 'var(--c-glass)'], ['Inside walls / kitchen wall', g.sensible.partitions, 'var(--c-part)'],
+    ['People', g.sensible.people+g.latent.people, 'var(--c-people)'], ['Lights, appliances, kitchen', g.sensible.lights+g.sensible.appliances+g.sensible.kitchen+g.latent.kitchen, 'var(--c-int)'],
+    ['Air leakage (heat)', g.sensible.infiltration, 'var(--c-infil)'], ['Air leakage (moisture)', g.latent.infiltration, 'var(--c-lat)']];
+  const tot=g.totalW||1;
+  $('bar').innerHTML=parts.filter(p=>p[1]>0).map(p=>`<span style="flex:0 0 ${(p[1]/tot*100).toFixed(2)}%;background:${p[2]}" title="${p[0]}: ${Math.round(p[1])} W"></span>`).join('');
+  $('legend').innerHTML=parts.map(p=>`<div><i style="background:${p[2]}"></i>${p[0]}<span class="v">${Math.round(p[1])} W · ${Math.round(p[1]/tot*100)}%</span></div>`).join('');
+  // cases
+  const rows=[['Peak summer day', r.caseA, 'A'], r.caseB?['Monsoon humid day', r.caseB, 'B']:null, r.caseC?['Heat wave (+3 °C)', r.caseC, 'C']:null].filter(Boolean);
+  const govCase = r.caseC && r.heatWaveW>r.designW ? 'C' : r.governing;
+  $('cases').innerHTML=rows.map(([n,c,k])=>`<tr class="${k===govCase?'gov':''}"><td>${n}${k===govCase?' ←':''}</td><td class="n">${c.DB} / ${c.WB} °C</td><td class="n">${Math.round(c.sensibleW)} W</td><td class="n">${Math.round(c.latentW)} W</td><td class="n">${fmtTR(c.designW)}</td></tr>`).join('');
+  // what-if
+  const base=r.heatWaveW;
+  const scen=[
+    ['Paint the terrace white (cool roof)', i=>({...i, roofFinish:'white'}), state.floor==='top' && state.roofFinish!=='white'],
+    ['Insulate the roof (PUF/XPS)', i=>({...i, roofType:'rccInsul'}), state.floor==='top' && state.roofType!=='rccInsul'],
+    ['Heavy blackout curtains on all windows', i=>({...i, walls:i.walls.map(w=>({...w, windows:w.windows.map(x=>({...x, shades:['blackout']}))}))}), true],
+    ['Set 26 °C and run the fan', i=>({...i, setpoint:26}), state.setpoint<26],
+    ['Switch to a BLDC fan', i=>({...i, appliances:i.appliances.map(a=>a==='fan'?'bldc':a)}), state.appliances.includes('fan')],
+    ['Seal windows and doors', i=>({...i, ach:'tight', frequentDoor:false}), state.ach!=='tight'],
+    ['Add sun-control film to glass', i=>({...i, walls:i.walls.map(w=>({...w, windows:w.windows.map(x=>({...x, glass:'reflective'}))}))}), true]
+  ].filter(s=>s[2]);
+  $('whatif').innerHTML = scen.map(([label,fn])=>{ let d=''; try{ const rr=E.calculate(fn(inp)); const dW=rr.heatWaveW-base; const dRs=(rr.cost&&r.cost)?rr.cost.star5.rs_month-r.cost.star5.rs_month:0; d=`${dW<=0?'−':'+'}${fmtW(Math.abs(dW))} (${(E.units.wToTR(Math.abs(dW))).toFixed(2)} ton) · ${rr.selection.recommended.label}${dRs?` · ${dRs<0?'saves':'adds'} ${inr(Math.abs(dRs))}/month`:''}`; }catch(e){ d='—'; }
+    return `<div class="wi"><span>${label}<span class="d">${d}</span></span></div>`; }).join('') || '<p class="small">No further easy wins for this room.</p>';
+  // warnings
+  const w=r.warnings; $('warnings').innerHTML = w.length ? w.map(x=>`<div class="warn ${x.level}"><span>${x.text}</span></div>`).join('') : '<p class="small">No special concerns for this room.</p>';
+  // cost
+  if(r.cost){ const c=r.cost; $('costNote').textContent=`${c.hours} h/day at ₹${c.tariff}/unit, average cooling load ${c.Lavg_kW.toFixed(1)} kW.`;
+    $('cost').innerHTML=`<div class="c5">5-star inverter (ISEER 5.3)<b>${inr(c.star5.rs_month)}</b>per month · ${Math.round(c.star5.kWh_month)} units</div><div class="c3">3-star inverter (ISEER 4.1)<b>${inr(c.star3.rs_month)}</b>per month · ${Math.round(c.star3.kWh_month)} units</div><div class="cf">Fixed-speed (ISEER 3.3)<b>${inr(c.fixed3.rs_month)}</b>per month · ${Math.round(c.fixed3.kWh_month)} units</div>`; }
+  // electrical
+  const el=r.electrical; $('elec').innerHTML=`<dt>Running current</dt><dd>${el.current}</dd><dt>MCB</dt><dd>${el.mcb}</dd><dt>Wire</dt><dd>${el.wire}</dd><dt>Point</dt><dd>${el.point}</dd>`;
+  $('ver').textContent=C2.version;
+}
+// Load first preset
+sides=JSON.parse(JSON.stringify(PRESETS.vadodara.sides)); state=Object.assign({}, PRESETS.vadodara); delete state.sides;
+render();
+})();
+</script>
