@@ -165,6 +165,7 @@ details{margin-top:10px} summary{cursor:pointer;font-weight:600;font-size:.9rem;
       <label class="f">City <select id="qCity"></select></label>
       <label class="f">Room area, sq ft <input type="number" id="qArea" min="40" max="800" step="10" value="120"></label>
     </div>
+    <div id="qCustomBox" hidden></div>
     <fieldset style="margin-top:12px"><legend>Is there a terrace directly above?</legend>
       <div class="seg" id="qFloor" role="group"><button type="button" data-v="top">Yes, top floor</button><button type="button" data-v="middle">No</button></div></fieldset>
     <fieldset><legend>Which side does the sun hit most?</legend>
@@ -199,7 +200,9 @@ details{margin-top:10px} summary{cursor:pointer;font-weight:600;font-size:.9rem;
         <option value="24">24 °C (BEE default)</option><option value="25">25 °C</option><option value="26">26 °C with a fan</option><option value="23">23 °C</option><option value="22">22 °C</option>
       </select></label>
     </div>
+    <div id="customBox" hidden></div>
     <p class="small" id="cityNote"></p>
+    <p class="small">* approximate or proxy weather data.</p>
   </div>
 
   <div class="card">
@@ -500,7 +503,8 @@ details{margin-top:10px} summary{cursor:pointer;font-weight:600;font-size:.9rem;
     tariffs: {
       'Gujarat': 7, 'Delhi': 7.5, 'Maharashtra': 12, 'Karnataka': 7.5, 'Tamil Nadu': 8,
       'Telangana': 8, 'West Bengal': 8, 'Uttar Pradesh': 7, 'Rajasthan': 7.5, 'Madhya Pradesh': 7,
-      'Kerala': 7.5, 'Punjab/Chandigarh': 7, 'Andhra Pradesh': 8, 'Assam': 7.5, 'Bihar': 7.5
+      'Kerala': 7.5, 'Punjab/Chandigarh': 7, 'Andhra Pradesh': 8, 'Assam': 7.5, 'Bihar': 7.5,
+      'Haryana': 7, 'Uttarakhand': 6.5, 'Jammu & Kashmir': 5, 'Himachal Pradesh': 5.5, 'Goa': 5, 'Chhattisgarh': 6.5, 'Jharkhand': 6.5, 'Odisha': 6.5, 'Meghalaya': 6, 'Manipur': 6, 'Tripura': 6
     }
   };
 
@@ -526,7 +530,55 @@ details{margin-top:10px} summary{cursor:pointer;font-weight:600;font-size:.9rem;
     { name: 'Kochi',        state: 'Kerala',         zone: 'Warm-humid', A: [35, 28],     B: [32, 27.5], alt: 0, estimated: true },
     { name: 'Guwahati',     state: 'Assam',          zone: 'Warm-humid', A: [35.2, 27.8], B: [33, 28],   alt: 55 },
     { name: 'Patna',        state: 'Bihar',          zone: 'Composite',  A: [41.3, 23.2], B: [35, 28],   alt: 53 },
-    { name: 'Visakhapatnam',state: 'Andhra Pradesh', zone: 'Warm-humid', A: [34.0, 27.1], B: [33, 28],   alt: 3 }
+    { name: 'Visakhapatnam',state: 'Andhra Pradesh', zone: 'Warm-humid', A: [34.0, 27.1], B: [33, 28],   alt: 3 },
+    // --- Batch 2 (Nov 2026). approx: general climate-table values, not a verified station record; proxy: nearest listed station.
+    { name: 'Gurugram',     state: 'Haryana',        zone: 'Composite',  A: [43.8, 22.2], B: [35, 28],   alt: 220 },
+    { name: 'Noida / Ghaziabad', state: 'Uttar Pradesh', zone: 'Composite', A: [42.3, 23.2], B: [35, 28], alt: 200, proxy: 'Delhi' },
+    { name: 'Faridabad',    state: 'Haryana',        zone: 'Composite',  A: [42.3, 23.2], B: [35, 28],   alt: 200, proxy: 'Delhi' },
+    { name: 'Meerut',       state: 'Uttar Pradesh',  zone: 'Composite',  A: [42.3, 23.2], B: [35, 28],   alt: 225, proxy: 'Delhi' },
+    { name: 'Agra',         state: 'Uttar Pradesh',  zone: 'Composite',  A: [43.5, 23.0], B: [35, 28],   alt: 170, approx: true },
+    { name: 'Kanpur',       state: 'Uttar Pradesh',  zone: 'Composite',  A: [43.0, 23.5], B: [35, 28],   alt: 126, approx: true },
+    { name: 'Prayagraj',    state: 'Uttar Pradesh',  zone: 'Composite',  A: [43.5, 23.5], B: [35, 28],   alt: 98,  approx: true },
+    { name: 'Varanasi',     state: 'Uttar Pradesh',  zone: 'Composite',  A: [42.5, 24.0], B: [35, 28],   alt: 81,  approx: true },
+    { name: 'Dehradun',     state: 'Uttarakhand',    zone: 'Composite',  A: [38.0, 22.5], B: [32, 26],   alt: 640, approx: true },
+    { name: 'Amritsar',     state: 'Punjab/Chandigarh', zone: 'Composite', A: [42.5, 24.0], B: [35, 28], alt: 234, approx: true },
+    { name: 'Ludhiana',     state: 'Punjab/Chandigarh', zone: 'Composite', A: [42.6, 24.5], B: [35, 28], alt: 244, approx: true },
+    { name: 'Jodhpur',      state: 'Rajasthan',      zone: 'Hot-dry',    A: [43.5, 21.5], B: [35, 26],   alt: 224, approx: true },
+    { name: 'Udaipur',      state: 'Rajasthan',      zone: 'Hot-dry',    A: [41.0, 20.5], B: [33, 25],   alt: 582, approx: true },
+    { name: 'Kota',         state: 'Rajasthan',      zone: 'Hot-dry',    A: [44.0, 21.5], B: [34, 27],   alt: 273, approx: true },
+    { name: 'Gwalior',      state: 'Madhya Pradesh', zone: 'Composite',  A: [44.0, 22.0], B: [34, 27],   alt: 212, approx: true },
+    { name: 'Jabalpur',     state: 'Madhya Pradesh', zone: 'Composite',  A: [42.5, 22.5], B: [33, 27],   alt: 411, approx: true },
+    { name: 'Srinagar',     state: 'Jammu & Kashmir', zone: 'Cold',      A: [33.5, 20.0], B: [30, 22],   alt: 1587, approx: true },
+    { name: 'Jammu',        state: 'Jammu & Kashmir', zone: 'Composite', A: [42.0, 23.0], B: [34, 27.5], alt: 327, approx: true },
+    { name: 'Shimla',       state: 'Himachal Pradesh', zone: 'Cold',     A: [28.0, 17.0], B: [25, 20],   alt: 2200, estimated: true },
+    { name: 'Thane / Navi Mumbai', state: 'Maharashtra', zone: 'Warm-humid', A: [37.5, 23.0], B: [33, 27.5], alt: 10, estimated: true },
+    { name: 'Nashik',       state: 'Maharashtra',    zone: 'Composite',  A: [39.5, 20.5], B: [31, 24.5], alt: 600, approx: true },
+    { name: 'Aurangabad',   state: 'Maharashtra',    zone: 'Hot-dry',    A: [41.0, 21.0], B: [32, 25],   alt: 580, approx: true },
+    { name: 'Solapur',      state: 'Maharashtra',    zone: 'Hot-dry',    A: [41.5, 21.5], B: [32, 25],   alt: 460, approx: true },
+    { name: 'Kolhapur',     state: 'Maharashtra',    zone: 'Composite',  A: [38.5, 22.0], B: [30, 25],   alt: 570, approx: true },
+    { name: 'Panaji (Goa)', state: 'Goa',            zone: 'Warm-humid', A: [34.5, 26.5], B: [32, 27.5], alt: 10,  approx: true },
+    { name: 'Bhavnagar',    state: 'Gujarat',        zone: 'Hot-dry',    A: [41.5, 24.5], B: [34, 27.5], alt: 24,  approx: true },
+    { name: 'Jamnagar',     state: 'Gujarat',        zone: 'Hot-dry',    A: [40.0, 25.0], B: [34, 27.5], alt: 20,  estimated: true },
+    { name: 'Gandhinagar',  state: 'Gujarat',        zone: 'Hot-dry',    A: [43.1, 23.0], B: [34, 27],   alt: 81,  proxy: 'Ahmedabad' },
+    { name: 'Coimbatore',   state: 'Tamil Nadu',     zone: 'Warm-humid', A: [37.0, 22.5], B: [31, 24.5], alt: 410, approx: true },
+    { name: 'Madurai',      state: 'Tamil Nadu',     zone: 'Warm-humid', A: [40.5, 24.5], B: [34, 26.5], alt: 140, approx: true },
+    { name: 'Tiruchirappalli', state: 'Tamil Nadu',  zone: 'Warm-humid', A: [40.5, 24.5], B: [34, 26.5], alt: 88,  approx: true },
+    { name: 'Mysuru',       state: 'Karnataka',      zone: 'Temperate',  A: [36.0, 20.5], B: [30, 23],   alt: 770, approx: true },
+    { name: 'Mangaluru',    state: 'Karnataka',      zone: 'Warm-humid', A: [34.5, 26.5], B: [31, 27.5], alt: 22,  approx: true },
+    { name: 'Hubballi',     state: 'Karnataka',      zone: 'Composite',  A: [39.0, 21.5], B: [30, 24],   alt: 660, approx: true },
+    { name: 'Vijayawada',   state: 'Andhra Pradesh', zone: 'Warm-humid', A: [42.5, 25.0], B: [34, 28],   alt: 23,  approx: true },
+    { name: 'Tirupati',     state: 'Andhra Pradesh', zone: 'Warm-humid', A: [41.5, 24.0], B: [34, 27],   alt: 150, approx: true },
+    { name: 'Thiruvananthapuram', state: 'Kerala',   zone: 'Warm-humid', A: [34.0, 26.5], B: [31, 27],   alt: 64,  approx: true },
+    { name: 'Kozhikode',    state: 'Kerala',         zone: 'Warm-humid', A: [34.5, 26.5], B: [31, 27.5], alt: 10,  estimated: true },
+    { name: 'Raipur',       state: 'Chhattisgarh',   zone: 'Composite',  A: [43.5, 23.0], B: [34, 27.5], alt: 298, approx: true },
+    { name: 'Ranchi',       state: 'Jharkhand',      zone: 'Composite',  A: [39.5, 22.5], B: [32, 26],   alt: 651, approx: true },
+    { name: 'Jamshedpur',   state: 'Jharkhand',      zone: 'Composite',  A: [42.0, 24.0], B: [34, 28],   alt: 135, approx: true },
+    { name: 'Bhubaneswar',  state: 'Odisha',         zone: 'Warm-humid', A: [40.0, 26.0], B: [34, 28.5], alt: 46,  approx: true },
+    { name: 'Cuttack',      state: 'Odisha',         zone: 'Warm-humid', A: [40.0, 26.0], B: [34, 28.5], alt: 36,  proxy: 'Bhubaneswar' },
+    { name: 'Siliguri',     state: 'West Bengal',    zone: 'Warm-humid', A: [35.5, 27.0], B: [33, 28],   alt: 120, estimated: true },
+    { name: 'Shillong',     state: 'Meghalaya',      zone: 'Cold',       A: [27.5, 20.0], B: [25, 21],   alt: 1500, estimated: true },
+    { name: 'Imphal',       state: 'Manipur',        zone: 'Temperate',  A: [32.5, 24.5], B: [30, 25],   alt: 786, estimated: true },
+    { name: 'Agartala',     state: 'Tripura',        zone: 'Warm-humid', A: [36.0, 27.0], B: [33, 28],   alt: 15,  approx: true }
   ];
 
   // ---------- Units ----------
@@ -566,6 +618,21 @@ details{margin-top:10px} summary{cursor:pointer;font-weight:600;font-size:.9rem;
       acType: 'inverter',
       hoursPerDay: 8, tariff: null, state: null
     };
+  }
+
+  // Defaults for a city that is not listed: coincident WB and monsoon case by climate zone
+  const ZONE_DEFAULTS = {
+    'Hot-dry':    { WB: 22.0, B: [34, 27] },
+    'Composite':  { WB: 23.5, B: [35, 28] },
+    'Warm-humid': { WB: 27.0, B: [33, 28] },
+    'Temperate':  { WB: 20.5, B: [30, 23] },
+    'Cold':       { WB: 19.0, B: [27, 21] }
+  };
+  function customClimate(zone, peakDB, altM) {
+    const z = ZONE_DEFAULTS[zone] || ZONE_DEFAULTS.Composite;
+    const DB = Math.min(48, Math.max(26, +peakDB || 40));
+    const WB = Math.min(z.WB, DB - 6);
+    return { A: [DB, WB], B: [Math.min(z.B[0], DB), Math.min(z.B[1], Math.min(z.B[0], DB) - 3)], alt: +altM || 0, zone };
   }
 
   function getCity(name) { return CITIES.find(c => c.name === name) || null; }
@@ -799,6 +866,9 @@ details{margin-top:10px} summary{cursor:pointer;font-weight:600;font-size:.9rem;
     if (inp.kitchen === 'open') w.push({ level: 'med', text: 'An open kitchen adds roughly 0.4 ton of cooling load. Keep the exhaust/chimney running while cooking.' });
     if (Math.abs(tr - areaRuleTR) / areaRuleTR > 0.4) w.push({ level: 'info', text: `Dealer rule of thumb (area ÷ 120) says ${areaRuleTR.toFixed(1)} ton; our calculation says ${tr.toFixed(2)} ton. Rules of thumb ignore roof, orientation and climate.` });
     if (city && (city.proxy || city.estimated)) w.push({ level: 'info', text: `Climate data for ${city.name} is ${city.proxy ? 'a proxy from ' + city.proxy : 'estimated'} (no nearby weather station). Results may vary by ±5%.` });
+    else if (city && city.approx) w.push({ level: 'info', text: `Design weather for ${city.name} comes from a general climate table, not a verified station record. Expect ±1–2 °C, about ±5% on the load.` });
+    if (!city) w.push({ level: 'info', text: 'You entered your own climate. The result is only as good as the peak temperature you typed; check it against the IMD normal for your town.' });
+    if (/Cold/.test(zone)) w.push({ level: 'low', text: 'Cold-zone city: summers are short. A 0.75–1 ton inverter usually covers a bedroom, and a model with heating mode is worth considering.' });
     if (inp.setpoint < 24) w.push({ level: 'low', text: 'Setpoints below 24 °C raise bills ~6% per degree. BEE recommends 24 °C; with a fan, 26 °C feels the same.' });
     return w;
   }
@@ -806,7 +876,7 @@ details{margin-top:10px} summary{cursor:pointer;font-weight:600;font-size:.9rem;
   function confidenceLevel(inp, city) {
     let score = 3;
     if (inp.wallType === 'unknown') score--;
-    if (city && (city.proxy || city.estimated)) score--;
+    if (!city || city.proxy || city.estimated) score--;
     if (!(inp.walls || []).length) score--;
     return score >= 3 ? 'High' : score === 2 ? 'Medium' : 'Low';
   }
@@ -839,7 +909,7 @@ details{margin-top:10px} summary{cursor:pointer;font-weight:600;font-size:.9rem;
     return { star, band };
   }
 
-  return { CONFIG, CITIES, defaultInput, calculate, computeCase, computeAirflow, select, starFromISEER, electricalAdvice,
+  return { CONFIG, CITIES, ZONE_DEFAULTS, customClimate, defaultInput, calculate, computeCase, computeAirflow, select, starFromISEER, electricalAdvice,
     units: { FT2_PER_M2, FT_PER_M, BTU_PER_W, W_PER_TR, wToTR, toM, toM2 },
     psychro: { sitePressure, humidityRatio, humidityRatioRH } };
 });
@@ -869,13 +939,35 @@ const PRESETS = {
 
 // ---- populate selects
 function fill(sel, obj, keyLabel){ sel.innerHTML=''; Object.entries(obj).forEach(([k,v])=>{ const o=document.createElement('option'); o.value=k; o.textContent=v[keyLabel||'label']; sel.appendChild(o); }); }
-E.CITIES.slice().sort((a,b)=>a.name.localeCompare(b.name)).forEach(c=>{ const o=document.createElement('option'); o.value=c.name; o.textContent=`${c.name} · ${c.zone}`; $('city').appendChild(o); });
+function buildCitySelect(sel, withZone){
+  sel.innerHTML='';
+  const byState={}; E.CITIES.forEach(c=>{ (byState[c.state]=byState[c.state]||[]).push(c); });
+  Object.keys(byState).sort().forEach(st=>{ const g=document.createElement('optgroup'); g.label=st;
+    byState[st].sort((a,b)=>a.name.localeCompare(b.name)).forEach(c=>{ const o=document.createElement('option'); o.value=c.name; o.textContent=c.name+(withZone?` · ${c.zone}`:'')+(c.proxy||c.estimated||c.approx?' *':''); g.appendChild(o); });
+    sel.appendChild(g); });
+  const o=document.createElement('option'); o.value='__custom'; o.textContent='My city is not listed…'; sel.appendChild(o);
+}
+buildCitySelect($('city'), true);
+// custom climate shared state
+const custom={ zone:'Composite', peak:42, alt:0 };
+function applyCustom(s){ s.city='Custom'; s.customClimate=E.customClimate(custom.zone, custom.peak, custom.alt); s.state=null; return s; }
+function customUI(box, onChange){
+  box.innerHTML=`<div class="row" style="margin-top:10px"><label class="f">Climate zone <select class="cz">${Object.keys(E.ZONE_DEFAULTS).map(z=>`<option ${z===custom.zone?'selected':''}>${z}</option>`).join('')}</select></label>
+    <label class="f">Peak summer afternoon °C <input type="number" class="cp" min="26" max="48" step="0.5" value="${custom.peak}"></label>
+    <label class="f">Altitude m (optional) <input type="number" class="ca" min="0" max="3000" step="10" value="${custom.alt}"></label></div>
+    <p class="small">Hot-dry: Rajasthan, Gujarat interior, Vidarbha. Composite: most of north and central India. Warm-humid: coasts, Bengal, the north-east plains. Temperate: Deccan plateau above ~600 m. Cold: hills.</p>`;
+  box.querySelector('.cz').onchange=e=>{ custom.zone=e.target.value; onChange(); };
+  box.querySelector('.cp').oninput=e=>{ const v=+e.target.value; if(v>=26&&v<=48){ custom.peak=v; onChange(); } };
+  box.querySelector('.ca').oninput=e=>{ custom.alt=+e.target.value||0; onChange(); };
+}
 fill($('roofType'), C.roofs); fill($('roofFinish'), C.roofFinish); fill($('wallType'), C.walls);
 Object.entries(C.appliances).forEach(([k,v])=>{ const b=document.createElement('button'); b.type='button'; b.className='chip'; b.dataset.v=k; b.textContent=`${v.label} · ${v.W} W`; b.setAttribute('aria-pressed','false'); b.onclick=()=>{ const i=state.appliances.indexOf(k); if(i>=0) state.appliances.splice(i,1); else state.appliances.push(k); render(); }; $('appl').appendChild(b); });
 
 function segInit(id, key){ $(id).querySelectorAll('button').forEach(b=> b.onclick=()=>{ state[key]=b.dataset.v; render(); }); }
 segInit('floor','floor'); segInit('kitchen','kitchen'); segInit('ach','ach');
-['city','usage','roofType','roofFinish','wallType','wallColour','lighting','acType'].forEach(id=> $(id).onchange=e=>{ state[id]=e.target.value; if(id==='city'){ state.tariff=null; } render(); });
+['usage','roofType','roofFinish','wallType','wallColour','lighting','acType'].forEach(id=> $(id).onchange=e=>{ state[id]=e.target.value; render(); });
+$('city').onchange=e=>{ state.tariff=null; if(e.target.value==='__custom'){ applyCustom(state); } else { state.city=e.target.value; state.customClimate=null; } render(); };
+customUI($('customBox'), ()=>{ applyCustom(state); render(false); });
 $('setpoint').onchange=e=>{ state.setpoint=+e.target.value; render(); };
 $('falseCeiling').onchange=e=>{ state.falseCeiling=e.target.checked; render(); };
 $('frequentDoor').onchange=e=>{ state.frequentDoor=e.target.checked; render(); };
@@ -920,7 +1012,7 @@ function wallsUI(){
 }
 
 function syncInputs(){
-  $('city').value=state.city; $('usage').value=state.usage; $('setpoint').value=String(state.setpoint);
+  $('city').value= state.customClimate ? '__custom' : state.city; $('customBox').hidden=!state.customClimate; $('usage').value=state.usage; $('setpoint').value=String(state.setpoint);
   const f=v=> unitM ? +(v/E.units.FT_PER_M).toFixed(2) : +v.toFixed(1);
   $('len').value=f(state.lengthFt); $('wid').value=f(state.widthFt); $('hgt').value=f(state.heightFt);
   $('uFt').setAttribute('aria-pressed',String(!unitM)); $('uM').setAttribute('aria-pressed',String(unitM));
@@ -935,8 +1027,8 @@ function syncInputs(){
   document.querySelectorAll('.room .side').forEach(el=> el.setAttribute('aria-pressed', String(!!sides[el.dataset.side])));
   const a=state.lengthFt*state.widthFt; $('areaNote').textContent=`Floor area ${a.toFixed(0)} sq ft (${(a/E.units.FT2_PER_M2).toFixed(1)} m²). Typical rooms are 80–400 sq ft.`;
   $('roomDims').textContent=`${state.lengthFt.toFixed(0)} × ${state.widthFt.toFixed(0)} ft`;
-  const city=E.CITIES.find(c=>c.name===state.city);
-  $('cityNote').textContent = city ? `${city.name}: design day ${city.A[0]} °C dry-bulb / ${city.A[1]} °C wet-bulb; monsoon check ${city.B[0]}/${city.B[1]} °C; ${city.alt} m above sea level.${city.proxy?' Weather is a proxy from '+city.proxy+'.':city.estimated?' Weather is estimated.':''}` : '';
+  const city=state.customClimate?null:E.CITIES.find(c=>c.name===state.city);
+  $('cityNote').textContent = state.customClimate ? `Custom climate: ${custom.zone}, design ${state.customClimate.A[0]} °C / ${state.customClimate.A[1]} °C wet-bulb; monsoon check ${state.customClimate.B[0]}/${state.customClimate.B[1]} °C.` : city ? `${city.name}: design day ${city.A[0]} °C dry-bulb / ${city.A[1]} °C wet-bulb; monsoon check ${city.B[0]}/${city.B[1]} °C; ${city.alt} m above sea level.${city.proxy?' Weather is a proxy from '+city.proxy+'.':city.estimated?' Weather is estimated.':''}` : '';
 }
 
 const fmtW=w=> w>=1000 ? (w/1000).toFixed(2)+' kW' : Math.round(w)+' W';
@@ -1037,10 +1129,11 @@ function render(sync=true){
 // ---- Quick mode
 let mode='quick';
 const q={ city:'Vadodara', area:120, floor:'top', sun:'W', win:16, curtain:true, people:2, use:'night' };
-E.CITIES.slice().sort((a,b)=>a.name.localeCompare(b.name)).forEach(c=>{ const o=document.createElement('option'); o.value=c.name; o.textContent=c.name; $('qCity').appendChild(o); });
+buildCitySelect($('qCity'), false);
+customUI($('qCustomBox'), ()=>renderQuick());
 function quickToState(){
   const s=E.defaultInput();
-  s.city=q.city; s.heightFt=10; s.wallType='brick9'; s.roofType='rccBare'; s.roofFinish='grey'; s.floor=q.floor; s.ach='average'; s.appliances=['fan'];
+  if(q.city==='__custom') applyCustom(s); else s.city=q.city; s.heightFt=10; s.wallType='brick9'; s.roofType='rccBare'; s.roofFinish='grey'; s.floor=q.floor; s.ach='average'; s.appliances=['fan'];
   const area=Math.max(40,Math.min(800,q.area||120));
   const L=Math.sqrt(area*1.25); s.lengthFt=+L.toFixed(1); s.widthFt=+(area/L).toFixed(1);
   s.usage = q.use==='kitchen' ? 'day' : q.use; s.kitchen = q.use==='kitchen' ? 'open' : 'none';
@@ -1054,7 +1147,7 @@ function quickToState(){
   return {state:s, sides:sd};
 }
 function syncQuick(){
-  $('qCity').value=q.city; $('qArea').value=q.area; $('qCurtain').checked=q.curtain;
+  $('qCity').value=q.city; $('qCustomBox').hidden = q.city!=='__custom'; $('qArea').value=q.area; $('qCurtain').checked=q.curtain;
   [['qFloor','floor'],['qSun','sun'],['qWin','win'],['qPeople','people'],['qUse','use']].forEach(([id,k])=> $(id).querySelectorAll('button').forEach(b=> b.setAttribute('aria-pressed', String(String(b.dataset.v)===String(q[k])))));
   $('qWin').hidden = q.sun==='none';
 }

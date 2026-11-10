@@ -117,5 +117,22 @@ ok('T20 humid room uses 18F and lower CFM/ton', rC.caseB.airflow.supplyDeltaF===
 ok('T20 fresh air 2 people 120 sqft = 18.6 CFM', near(af.freshCfm, 7.5*2+0.03*120, 0.2), af.freshCfm);
 ok('T20 air changes from supply ~ 20-35', af.ach > 15 && af.ach < 40, af.ach);
 
+// T21 city table sanity
+let bad=[]; const names=new Set();
+E.CITIES.forEach(c=>{ if(names.has(c.name)) bad.push('dup '+c.name); names.add(c.name);
+  if(!(c.A[0]>=26 && c.A[0]<=47)) bad.push(c.name+' DB'); if(!(c.A[1]>=15 && c.A[1]<=30)) bad.push(c.name+' WB');
+  if(c.A[1]>=c.A[0]) bad.push(c.name+' WB>=DB'); if(c.B && c.B[1]>=c.B[0]) bad.push(c.name+' B WB>=DB');
+  if(c.B && !(c.B[1] >= c.A[1]-1.5)) bad.push(c.name+' monsoon drier than peak'); if(!E.CONFIG.tariffs[c.state]) bad.push(c.name+' no tariff for '+c.state);
+  if(c.proxy && !E.CITIES.find(x=>x.name===c.proxy)) bad.push(c.name+' bad proxy');
+  if(!/Hot-dry|Composite|Warm-humid|Temperate|Cold/.test(c.zone)) bad.push(c.name+' zone'); });
+ok('T21 city table sane ('+E.CITIES.length+' cities)', bad.length===0, bad.join('; '));
+ok('T21 every city calculates', E.CITIES.every(c=>{ try{ return isFinite(E.calculate(Object.assign(d(),{city:c.name})).designW); }catch(e){ return false; } }));
+// T22 custom climate
+const cc = E.customClimate('Warm-humid', 36, 0);
+const rcc = E.calculate(Object.assign(d(), { city: 'Custom', customClimate: cc }));
+ok('T22 custom climate computes and warns', isFinite(rcc.designW) && rcc.warnings.some(w=>/own climate/.test(w.text)) && rcc.confidence!=='High');
+ok('T22 custom WB below DB and monsoon consistent', cc.A[1] < cc.A[0] && cc.B[1] < cc.B[0]);
+ok('T22 Srinagar cold-zone note', E.calculate(Object.assign(d(),{city:'Srinagar'})).warnings.some(w=>/Cold-zone/.test(w.text)));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

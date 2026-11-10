@@ -156,6 +156,7 @@ details{margin-top:10px} summary{cursor:pointer;font-weight:600;font-size:.9rem;
       <label class="f">City <select id="qCity"></select></label>
       <label class="f">Room area, sq ft <input type="number" id="qArea" min="40" max="800" step="10" value="120"></label>
     </div>
+    <div id="qCustomBox" hidden></div>
     <fieldset style="margin-top:12px"><legend>Is there a terrace directly above?</legend>
       <div class="seg" id="qFloor" role="group"><button type="button" data-v="top">Yes, top floor</button><button type="button" data-v="middle">No</button></div></fieldset>
     <fieldset><legend>Which side does the sun hit most?</legend>
@@ -190,7 +191,9 @@ details{margin-top:10px} summary{cursor:pointer;font-weight:600;font-size:.9rem;
         <option value="24">24 °C (BEE default)</option><option value="25">25 °C</option><option value="26">26 °C with a fan</option><option value="23">23 °C</option><option value="22">22 °C</option>
       </select></label>
     </div>
+    <div id="customBox" hidden></div>
     <p class="small" id="cityNote"></p>
+    <p class="small">* approximate or proxy weather data.</p>
   </div>
 
   <div class="card">
@@ -399,13 +402,35 @@ const PRESETS = {
 
 // ---- populate selects
 function fill(sel, obj, keyLabel){ sel.innerHTML=''; Object.entries(obj).forEach(([k,v])=>{ const o=document.createElement('option'); o.value=k; o.textContent=v[keyLabel||'label']; sel.appendChild(o); }); }
-E.CITIES.slice().sort((a,b)=>a.name.localeCompare(b.name)).forEach(c=>{ const o=document.createElement('option'); o.value=c.name; o.textContent=`${c.name} · ${c.zone}`; $('city').appendChild(o); });
+function buildCitySelect(sel, withZone){
+  sel.innerHTML='';
+  const byState={}; E.CITIES.forEach(c=>{ (byState[c.state]=byState[c.state]||[]).push(c); });
+  Object.keys(byState).sort().forEach(st=>{ const g=document.createElement('optgroup'); g.label=st;
+    byState[st].sort((a,b)=>a.name.localeCompare(b.name)).forEach(c=>{ const o=document.createElement('option'); o.value=c.name; o.textContent=c.name+(withZone?` · ${c.zone}`:'')+(c.proxy||c.estimated||c.approx?' *':''); g.appendChild(o); });
+    sel.appendChild(g); });
+  const o=document.createElement('option'); o.value='__custom'; o.textContent='My city is not listed…'; sel.appendChild(o);
+}
+buildCitySelect($('city'), true);
+// custom climate shared state
+const custom={ zone:'Composite', peak:42, alt:0 };
+function applyCustom(s){ s.city='Custom'; s.customClimate=E.customClimate(custom.zone, custom.peak, custom.alt); s.state=null; return s; }
+function customUI(box, onChange){
+  box.innerHTML=`<div class="row" style="margin-top:10px"><label class="f">Climate zone <select class="cz">${Object.keys(E.ZONE_DEFAULTS).map(z=>`<option ${z===custom.zone?'selected':''}>${z}</option>`).join('')}</select></label>
+    <label class="f">Peak summer afternoon °C <input type="number" class="cp" min="26" max="48" step="0.5" value="${custom.peak}"></label>
+    <label class="f">Altitude m (optional) <input type="number" class="ca" min="0" max="3000" step="10" value="${custom.alt}"></label></div>
+    <p class="small">Hot-dry: Rajasthan, Gujarat interior, Vidarbha. Composite: most of north and central India. Warm-humid: coasts, Bengal, the north-east plains. Temperate: Deccan plateau above ~600 m. Cold: hills.</p>`;
+  box.querySelector('.cz').onchange=e=>{ custom.zone=e.target.value; onChange(); };
+  box.querySelector('.cp').oninput=e=>{ const v=+e.target.value; if(v>=26&&v<=48){ custom.peak=v; onChange(); } };
+  box.querySelector('.ca').oninput=e=>{ custom.alt=+e.target.value||0; onChange(); };
+}
 fill($('roofType'), C.roofs); fill($('roofFinish'), C.roofFinish); fill($('wallType'), C.walls);
 Object.entries(C.appliances).forEach(([k,v])=>{ const b=document.createElement('button'); b.type='button'; b.className='chip'; b.dataset.v=k; b.textContent=`${v.label} · ${v.W} W`; b.setAttribute('aria-pressed','false'); b.onclick=()=>{ const i=state.appliances.indexOf(k); if(i>=0) state.appliances.splice(i,1); else state.appliances.push(k); render(); }; $('appl').appendChild(b); });
 
 function segInit(id, key){ $(id).querySelectorAll('button').forEach(b=> b.onclick=()=>{ state[key]=b.dataset.v; render(); }); }
 segInit('floor','floor'); segInit('kitchen','kitchen'); segInit('ach','ach');
-['city','usage','roofType','roofFinish','wallType','wallColour','lighting','acType'].forEach(id=> $(id).onchange=e=>{ state[id]=e.target.value; if(id==='city'){ state.tariff=null; } render(); });
+['usage','roofType','roofFinish','wallType','wallColour','lighting','acType'].forEach(id=> $(id).onchange=e=>{ state[id]=e.target.value; render(); });
+$('city').onchange=e=>{ state.tariff=null; if(e.target.value==='__custom'){ applyCustom(state); } else { state.city=e.target.value; state.customClimate=null; } render(); };
+customUI($('customBox'), ()=>{ applyCustom(state); render(false); });
 $('setpoint').onchange=e=>{ state.setpoint=+e.target.value; render(); };
 $('falseCeiling').onchange=e=>{ state.falseCeiling=e.target.checked; render(); };
 $('frequentDoor').onchange=e=>{ state.frequentDoor=e.target.checked; render(); };
@@ -450,7 +475,7 @@ function wallsUI(){
 }
 
 function syncInputs(){
-  $('city').value=state.city; $('usage').value=state.usage; $('setpoint').value=String(state.setpoint);
+  $('city').value= state.customClimate ? '__custom' : state.city; $('customBox').hidden=!state.customClimate; $('usage').value=state.usage; $('setpoint').value=String(state.setpoint);
   const f=v=> unitM ? +(v/E.units.FT_PER_M).toFixed(2) : +v.toFixed(1);
   $('len').value=f(state.lengthFt); $('wid').value=f(state.widthFt); $('hgt').value=f(state.heightFt);
   $('uFt').setAttribute('aria-pressed',String(!unitM)); $('uM').setAttribute('aria-pressed',String(unitM));
@@ -465,8 +490,8 @@ function syncInputs(){
   document.querySelectorAll('.room .side').forEach(el=> el.setAttribute('aria-pressed', String(!!sides[el.dataset.side])));
   const a=state.lengthFt*state.widthFt; $('areaNote').textContent=`Floor area ${a.toFixed(0)} sq ft (${(a/E.units.FT2_PER_M2).toFixed(1)} m²). Typical rooms are 80–400 sq ft.`;
   $('roomDims').textContent=`${state.lengthFt.toFixed(0)} × ${state.widthFt.toFixed(0)} ft`;
-  const city=E.CITIES.find(c=>c.name===state.city);
-  $('cityNote').textContent = city ? `${city.name}: design day ${city.A[0]} °C dry-bulb / ${city.A[1]} °C wet-bulb; monsoon check ${city.B[0]}/${city.B[1]} °C; ${city.alt} m above sea level.${city.proxy?' Weather is a proxy from '+city.proxy+'.':city.estimated?' Weather is estimated.':''}` : '';
+  const city=state.customClimate?null:E.CITIES.find(c=>c.name===state.city);
+  $('cityNote').textContent = state.customClimate ? `Custom climate: ${custom.zone}, design ${state.customClimate.A[0]} °C / ${state.customClimate.A[1]} °C wet-bulb; monsoon check ${state.customClimate.B[0]}/${state.customClimate.B[1]} °C.` : city ? `${city.name}: design day ${city.A[0]} °C dry-bulb / ${city.A[1]} °C wet-bulb; monsoon check ${city.B[0]}/${city.B[1]} °C; ${city.alt} m above sea level.${city.proxy?' Weather is a proxy from '+city.proxy+'.':city.estimated?' Weather is estimated.':''}` : '';
 }
 
 const fmtW=w=> w>=1000 ? (w/1000).toFixed(2)+' kW' : Math.round(w)+' W';
@@ -567,10 +592,11 @@ function render(sync=true){
 // ---- Quick mode
 let mode='quick';
 const q={ city:'Vadodara', area:120, floor:'top', sun:'W', win:16, curtain:true, people:2, use:'night' };
-E.CITIES.slice().sort((a,b)=>a.name.localeCompare(b.name)).forEach(c=>{ const o=document.createElement('option'); o.value=c.name; o.textContent=c.name; $('qCity').appendChild(o); });
+buildCitySelect($('qCity'), false);
+customUI($('qCustomBox'), ()=>renderQuick());
 function quickToState(){
   const s=E.defaultInput();
-  s.city=q.city; s.heightFt=10; s.wallType='brick9'; s.roofType='rccBare'; s.roofFinish='grey'; s.floor=q.floor; s.ach='average'; s.appliances=['fan'];
+  if(q.city==='__custom') applyCustom(s); else s.city=q.city; s.heightFt=10; s.wallType='brick9'; s.roofType='rccBare'; s.roofFinish='grey'; s.floor=q.floor; s.ach='average'; s.appliances=['fan'];
   const area=Math.max(40,Math.min(800,q.area||120));
   const L=Math.sqrt(area*1.25); s.lengthFt=+L.toFixed(1); s.widthFt=+(area/L).toFixed(1);
   s.usage = q.use==='kitchen' ? 'day' : q.use; s.kitchen = q.use==='kitchen' ? 'open' : 'none';
@@ -584,7 +610,7 @@ function quickToState(){
   return {state:s, sides:sd};
 }
 function syncQuick(){
-  $('qCity').value=q.city; $('qArea').value=q.area; $('qCurtain').checked=q.curtain;
+  $('qCity').value=q.city; $('qCustomBox').hidden = q.city!=='__custom'; $('qArea').value=q.area; $('qCurtain').checked=q.curtain;
   [['qFloor','floor'],['qSun','sun'],['qWin','win'],['qPeople','people'],['qUse','use']].forEach(([id,k])=> $(id).querySelectorAll('button').forEach(b=> b.setAttribute('aria-pressed', String(String(b.dataset.v)===String(q[k])))));
   $('qWin').hidden = q.sun==='none';
 }

@@ -116,7 +116,8 @@
     tariffs: {
       'Gujarat': 7, 'Delhi': 7.5, 'Maharashtra': 12, 'Karnataka': 7.5, 'Tamil Nadu': 8,
       'Telangana': 8, 'West Bengal': 8, 'Uttar Pradesh': 7, 'Rajasthan': 7.5, 'Madhya Pradesh': 7,
-      'Kerala': 7.5, 'Punjab/Chandigarh': 7, 'Andhra Pradesh': 8, 'Assam': 7.5, 'Bihar': 7.5
+      'Kerala': 7.5, 'Punjab/Chandigarh': 7, 'Andhra Pradesh': 8, 'Assam': 7.5, 'Bihar': 7.5,
+      'Haryana': 7, 'Uttarakhand': 6.5, 'Jammu & Kashmir': 5, 'Himachal Pradesh': 5.5, 'Goa': 5, 'Chhattisgarh': 6.5, 'Jharkhand': 6.5, 'Odisha': 6.5, 'Meghalaya': 6, 'Manipur': 6, 'Tripura': 6
     }
   };
 
@@ -142,7 +143,55 @@
     { name: 'Kochi',        state: 'Kerala',         zone: 'Warm-humid', A: [35, 28],     B: [32, 27.5], alt: 0, estimated: true },
     { name: 'Guwahati',     state: 'Assam',          zone: 'Warm-humid', A: [35.2, 27.8], B: [33, 28],   alt: 55 },
     { name: 'Patna',        state: 'Bihar',          zone: 'Composite',  A: [41.3, 23.2], B: [35, 28],   alt: 53 },
-    { name: 'Visakhapatnam',state: 'Andhra Pradesh', zone: 'Warm-humid', A: [34.0, 27.1], B: [33, 28],   alt: 3 }
+    { name: 'Visakhapatnam',state: 'Andhra Pradesh', zone: 'Warm-humid', A: [34.0, 27.1], B: [33, 28],   alt: 3 },
+    // --- Batch 2 (Nov 2026). approx: general climate-table values, not a verified station record; proxy: nearest listed station.
+    { name: 'Gurugram',     state: 'Haryana',        zone: 'Composite',  A: [43.8, 22.2], B: [35, 28],   alt: 220 },
+    { name: 'Noida / Ghaziabad', state: 'Uttar Pradesh', zone: 'Composite', A: [42.3, 23.2], B: [35, 28], alt: 200, proxy: 'Delhi' },
+    { name: 'Faridabad',    state: 'Haryana',        zone: 'Composite',  A: [42.3, 23.2], B: [35, 28],   alt: 200, proxy: 'Delhi' },
+    { name: 'Meerut',       state: 'Uttar Pradesh',  zone: 'Composite',  A: [42.3, 23.2], B: [35, 28],   alt: 225, proxy: 'Delhi' },
+    { name: 'Agra',         state: 'Uttar Pradesh',  zone: 'Composite',  A: [43.5, 23.0], B: [35, 28],   alt: 170, approx: true },
+    { name: 'Kanpur',       state: 'Uttar Pradesh',  zone: 'Composite',  A: [43.0, 23.5], B: [35, 28],   alt: 126, approx: true },
+    { name: 'Prayagraj',    state: 'Uttar Pradesh',  zone: 'Composite',  A: [43.5, 23.5], B: [35, 28],   alt: 98,  approx: true },
+    { name: 'Varanasi',     state: 'Uttar Pradesh',  zone: 'Composite',  A: [42.5, 24.0], B: [35, 28],   alt: 81,  approx: true },
+    { name: 'Dehradun',     state: 'Uttarakhand',    zone: 'Composite',  A: [38.0, 22.5], B: [32, 26],   alt: 640, approx: true },
+    { name: 'Amritsar',     state: 'Punjab/Chandigarh', zone: 'Composite', A: [42.5, 24.0], B: [35, 28], alt: 234, approx: true },
+    { name: 'Ludhiana',     state: 'Punjab/Chandigarh', zone: 'Composite', A: [42.6, 24.5], B: [35, 28], alt: 244, approx: true },
+    { name: 'Jodhpur',      state: 'Rajasthan',      zone: 'Hot-dry',    A: [43.5, 21.5], B: [35, 26],   alt: 224, approx: true },
+    { name: 'Udaipur',      state: 'Rajasthan',      zone: 'Hot-dry',    A: [41.0, 20.5], B: [33, 25],   alt: 582, approx: true },
+    { name: 'Kota',         state: 'Rajasthan',      zone: 'Hot-dry',    A: [44.0, 21.5], B: [34, 27],   alt: 273, approx: true },
+    { name: 'Gwalior',      state: 'Madhya Pradesh', zone: 'Composite',  A: [44.0, 22.0], B: [34, 27],   alt: 212, approx: true },
+    { name: 'Jabalpur',     state: 'Madhya Pradesh', zone: 'Composite',  A: [42.5, 22.5], B: [33, 27],   alt: 411, approx: true },
+    { name: 'Srinagar',     state: 'Jammu & Kashmir', zone: 'Cold',      A: [33.5, 20.0], B: [30, 22],   alt: 1587, approx: true },
+    { name: 'Jammu',        state: 'Jammu & Kashmir', zone: 'Composite', A: [42.0, 23.0], B: [34, 27.5], alt: 327, approx: true },
+    { name: 'Shimla',       state: 'Himachal Pradesh', zone: 'Cold',     A: [28.0, 17.0], B: [25, 20],   alt: 2200, estimated: true },
+    { name: 'Thane / Navi Mumbai', state: 'Maharashtra', zone: 'Warm-humid', A: [37.5, 23.0], B: [33, 27.5], alt: 10, estimated: true },
+    { name: 'Nashik',       state: 'Maharashtra',    zone: 'Composite',  A: [39.5, 20.5], B: [31, 24.5], alt: 600, approx: true },
+    { name: 'Aurangabad',   state: 'Maharashtra',    zone: 'Hot-dry',    A: [41.0, 21.0], B: [32, 25],   alt: 580, approx: true },
+    { name: 'Solapur',      state: 'Maharashtra',    zone: 'Hot-dry',    A: [41.5, 21.5], B: [32, 25],   alt: 460, approx: true },
+    { name: 'Kolhapur',     state: 'Maharashtra',    zone: 'Composite',  A: [38.5, 22.0], B: [30, 25],   alt: 570, approx: true },
+    { name: 'Panaji (Goa)', state: 'Goa',            zone: 'Warm-humid', A: [34.5, 26.5], B: [32, 27.5], alt: 10,  approx: true },
+    { name: 'Bhavnagar',    state: 'Gujarat',        zone: 'Hot-dry',    A: [41.5, 24.5], B: [34, 27.5], alt: 24,  approx: true },
+    { name: 'Jamnagar',     state: 'Gujarat',        zone: 'Hot-dry',    A: [40.0, 25.0], B: [34, 27.5], alt: 20,  estimated: true },
+    { name: 'Gandhinagar',  state: 'Gujarat',        zone: 'Hot-dry',    A: [43.1, 23.0], B: [34, 27],   alt: 81,  proxy: 'Ahmedabad' },
+    { name: 'Coimbatore',   state: 'Tamil Nadu',     zone: 'Warm-humid', A: [37.0, 22.5], B: [31, 24.5], alt: 410, approx: true },
+    { name: 'Madurai',      state: 'Tamil Nadu',     zone: 'Warm-humid', A: [40.5, 24.5], B: [34, 26.5], alt: 140, approx: true },
+    { name: 'Tiruchirappalli', state: 'Tamil Nadu',  zone: 'Warm-humid', A: [40.5, 24.5], B: [34, 26.5], alt: 88,  approx: true },
+    { name: 'Mysuru',       state: 'Karnataka',      zone: 'Temperate',  A: [36.0, 20.5], B: [30, 23],   alt: 770, approx: true },
+    { name: 'Mangaluru',    state: 'Karnataka',      zone: 'Warm-humid', A: [34.5, 26.5], B: [31, 27.5], alt: 22,  approx: true },
+    { name: 'Hubballi',     state: 'Karnataka',      zone: 'Composite',  A: [39.0, 21.5], B: [30, 24],   alt: 660, approx: true },
+    { name: 'Vijayawada',   state: 'Andhra Pradesh', zone: 'Warm-humid', A: [42.5, 25.0], B: [34, 28],   alt: 23,  approx: true },
+    { name: 'Tirupati',     state: 'Andhra Pradesh', zone: 'Warm-humid', A: [41.5, 24.0], B: [34, 27],   alt: 150, approx: true },
+    { name: 'Thiruvananthapuram', state: 'Kerala',   zone: 'Warm-humid', A: [34.0, 26.5], B: [31, 27],   alt: 64,  approx: true },
+    { name: 'Kozhikode',    state: 'Kerala',         zone: 'Warm-humid', A: [34.5, 26.5], B: [31, 27.5], alt: 10,  estimated: true },
+    { name: 'Raipur',       state: 'Chhattisgarh',   zone: 'Composite',  A: [43.5, 23.0], B: [34, 27.5], alt: 298, approx: true },
+    { name: 'Ranchi',       state: 'Jharkhand',      zone: 'Composite',  A: [39.5, 22.5], B: [32, 26],   alt: 651, approx: true },
+    { name: 'Jamshedpur',   state: 'Jharkhand',      zone: 'Composite',  A: [42.0, 24.0], B: [34, 28],   alt: 135, approx: true },
+    { name: 'Bhubaneswar',  state: 'Odisha',         zone: 'Warm-humid', A: [40.0, 26.0], B: [34, 28.5], alt: 46,  approx: true },
+    { name: 'Cuttack',      state: 'Odisha',         zone: 'Warm-humid', A: [40.0, 26.0], B: [34, 28.5], alt: 36,  proxy: 'Bhubaneswar' },
+    { name: 'Siliguri',     state: 'West Bengal',    zone: 'Warm-humid', A: [35.5, 27.0], B: [33, 28],   alt: 120, estimated: true },
+    { name: 'Shillong',     state: 'Meghalaya',      zone: 'Cold',       A: [27.5, 20.0], B: [25, 21],   alt: 1500, estimated: true },
+    { name: 'Imphal',       state: 'Manipur',        zone: 'Temperate',  A: [32.5, 24.5], B: [30, 25],   alt: 786, estimated: true },
+    { name: 'Agartala',     state: 'Tripura',        zone: 'Warm-humid', A: [36.0, 27.0], B: [33, 28],   alt: 15,  approx: true }
   ];
 
   // ---------- Units ----------
@@ -182,6 +231,21 @@
       acType: 'inverter',
       hoursPerDay: 8, tariff: null, state: null
     };
+  }
+
+  // Defaults for a city that is not listed: coincident WB and monsoon case by climate zone
+  const ZONE_DEFAULTS = {
+    'Hot-dry':    { WB: 22.0, B: [34, 27] },
+    'Composite':  { WB: 23.5, B: [35, 28] },
+    'Warm-humid': { WB: 27.0, B: [33, 28] },
+    'Temperate':  { WB: 20.5, B: [30, 23] },
+    'Cold':       { WB: 19.0, B: [27, 21] }
+  };
+  function customClimate(zone, peakDB, altM) {
+    const z = ZONE_DEFAULTS[zone] || ZONE_DEFAULTS.Composite;
+    const DB = Math.min(48, Math.max(26, +peakDB || 40));
+    const WB = Math.min(z.WB, DB - 6);
+    return { A: [DB, WB], B: [Math.min(z.B[0], DB), Math.min(z.B[1], Math.min(z.B[0], DB) - 3)], alt: +altM || 0, zone };
   }
 
   function getCity(name) { return CITIES.find(c => c.name === name) || null; }
@@ -415,6 +479,9 @@
     if (inp.kitchen === 'open') w.push({ level: 'med', text: 'An open kitchen adds roughly 0.4 ton of cooling load. Keep the exhaust/chimney running while cooking.' });
     if (Math.abs(tr - areaRuleTR) / areaRuleTR > 0.4) w.push({ level: 'info', text: `Dealer rule of thumb (area ÷ 120) says ${areaRuleTR.toFixed(1)} ton; our calculation says ${tr.toFixed(2)} ton. Rules of thumb ignore roof, orientation and climate.` });
     if (city && (city.proxy || city.estimated)) w.push({ level: 'info', text: `Climate data for ${city.name} is ${city.proxy ? 'a proxy from ' + city.proxy : 'estimated'} (no nearby weather station). Results may vary by ±5%.` });
+    else if (city && city.approx) w.push({ level: 'info', text: `Design weather for ${city.name} comes from a general climate table, not a verified station record. Expect ±1–2 °C, about ±5% on the load.` });
+    if (!city) w.push({ level: 'info', text: 'You entered your own climate. The result is only as good as the peak temperature you typed; check it against the IMD normal for your town.' });
+    if (/Cold/.test(zone)) w.push({ level: 'low', text: 'Cold-zone city: summers are short. A 0.75–1 ton inverter usually covers a bedroom, and a model with heating mode is worth considering.' });
     if (inp.setpoint < 24) w.push({ level: 'low', text: 'Setpoints below 24 °C raise bills ~6% per degree. BEE recommends 24 °C; with a fan, 26 °C feels the same.' });
     return w;
   }
@@ -422,7 +489,7 @@
   function confidenceLevel(inp, city) {
     let score = 3;
     if (inp.wallType === 'unknown') score--;
-    if (city && (city.proxy || city.estimated)) score--;
+    if (!city || city.proxy || city.estimated) score--;
     if (!(inp.walls || []).length) score--;
     return score >= 3 ? 'High' : score === 2 ? 'Medium' : 'Low';
   }
@@ -455,7 +522,7 @@
     return { star, band };
   }
 
-  return { CONFIG, CITIES, defaultInput, calculate, computeCase, computeAirflow, select, starFromISEER, electricalAdvice,
+  return { CONFIG, CITIES, ZONE_DEFAULTS, customClimate, defaultInput, calculate, computeCase, computeAirflow, select, starFromISEER, electricalAdvice,
     units: { FT2_PER_M2, FT_PER_M, BTU_PER_W, W_PER_TR, wToTR, toM, toM2 },
     psychro: { sitePressure, humidityRatio, humidityRatioRH } };
 });
