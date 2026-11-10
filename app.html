@@ -36,6 +36,11 @@ h3{font-size:.95rem;font-weight:600}
 header.top{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;padding-block:28px 20px;border-bottom:1px solid var(--line)}
 header p{margin:6px 0 0;color:var(--muted);max-width:60ch}
 .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:.75rem;font-weight:600;background:var(--accent-soft);color:var(--accent-2)}
+.mode{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:20px}
+.mode button{font:inherit;font-family:var(--font-display);font-weight:600;font-size:.9rem;padding:9px 16px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+.mode button[aria-selected=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.mode .small{flex-basis:100%}
+@media (min-width:700px){.mode .small{flex-basis:auto;margin-left:8px}}
 .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;margin-top:24px;align-items:start}
 @media (max-width:900px){.grid{grid-template-columns:1fr}}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px;min-width:0}
@@ -137,8 +142,39 @@ details{margin-top:10px} summary{cursor:pointer;font-weight:600;font-size:.9rem;
   </div>
 </header>
 
+<div class="mode" role="tablist" aria-label="Mode">
+  <button type="button" id="modeQuick" role="tab" aria-selected="true">Quick estimate</button>
+  <button type="button" id="modeFull" role="tab" aria-selected="false">Detailed calculation</button>
+  <span class="small" id="modeHint">Seven questions, about a minute. Good enough to shortlist a size.</span>
+</div>
+
 <div class="grid">
-<section id="form" aria-label="Inputs">
+<section id="quick" aria-label="Quick inputs">
+  <div class="card">
+    <h2><span class="step">Q</span> Tell us about the room</h2>
+    <div class="row">
+      <label class="f">City <select id="qCity"></select></label>
+      <label class="f">Room area, sq ft <input type="number" id="qArea" min="40" max="800" step="10" value="120"></label>
+    </div>
+    <fieldset style="margin-top:12px"><legend>Is there a terrace directly above?</legend>
+      <div class="seg" id="qFloor" role="group"><button type="button" data-v="top">Yes, top floor</button><button type="button" data-v="middle">No</button></div></fieldset>
+    <fieldset><legend>Which side does the sun hit most?</legend>
+      <div class="seg" id="qSun" role="group">
+        <button type="button" data-v="W">West (evening)</button><button type="button" data-v="S">South</button><button type="button" data-v="E">East (morning)</button><button type="button" data-v="N">North</button><button type="button" data-v="WS">Two sides, west + south</button><button type="button" data-v="none">No outside wall</button>
+      </div></fieldset>
+    <fieldset><legend>Windows on that side</legend>
+      <div class="seg" id="qWin" role="group"><button type="button" data-v="9">Small</button><button type="button" data-v="16">Normal</button><button type="button" data-v="42">Large / balcony door</button><button type="button" data-v="0">None</button></div>
+      <label class="chip" style="margin-top:8px"><input type="checkbox" id="qCurtain" checked style="accent-color:var(--accent)"> Curtains or blinds</label></fieldset>
+    <fieldset><legend>People usually in the room</legend>
+      <div class="seg" id="qPeople" role="group"><button type="button" data-v="1">1</button><button type="button" data-v="2">2</button><button type="button" data-v="3">3</button><button type="button" data-v="4">4</button><button type="button" data-v="6">5 or more</button></div></fieldset>
+    <fieldset><legend>How is the room used?</legend>
+      <div class="seg" id="qUse" role="group"><button type="button" data-v="night">Bedroom at night</button><button type="button" data-v="day">Living / daytime</button><button type="button" data-v="allday">All day</button><button type="button" data-v="kitchen">Living with open kitchen</button></div></fieldset>
+    <p class="small">Assumes a 10 ft ceiling, 9-inch brick walls, plain grey terrace, typical window sealing, LED lights and a ceiling fan. The result on the right updates as you answer.</p>
+    <button type="button" class="btn primary" id="qRefine" style="margin-top:8px">Refine in detailed mode →</button>
+  </div>
+</section>
+
+<section id="form" aria-label="Inputs" hidden>
 
   <div class="card">
     <h2><span class="step">1</span> Where and what kind of room</h2>
@@ -455,7 +491,8 @@ function render(sync=true){
   $('recSub').textContent = rec ? `Look for a unit rated about ${(rec.kW*0.96).toFixed(1)}–${(rec.kW*1.04).toFixed(1)} kW cooling${r.selection.acceptable.length>1?`. Also acceptable: ${r.selection.acceptable.filter(c=>c!==rec).map(c=>c.label).join(', ')}.`:'.'}` : '';
   $('mLoad').textContent=`${fmtW(r.designW)} · ${r.designTR.toFixed(2)} ton`;
   $('mHw').textContent= r.heatWave ? `${r.heatWaveTR.toFixed(2)} ton` : 'not applied';
-  $('mConf').textContent=r.confidence; $('mConf').className='conf '+r.confidence;
+  const quickMode = typeof mode!=='undefined' && mode==='quick';
+  $('mConf').textContent= quickMode ? 'Rough (quick mode)' : r.confidence; $('mConf').className='conf '+(quickMode?'Medium':r.confidence);
   $('mZone').textContent=`${r.city?r.city.name:'Custom'} · ${r.zone}`;
   $('heatWave').checked=r.heatWave;
   $('tariff').value=r.tariff;
@@ -527,8 +564,44 @@ function render(sync=true){
   const el=r.electrical; $('elec').innerHTML=`<dt>Running current</dt><dd>${el.current}</dd><dt>MCB</dt><dd>${el.mcb}</dd><dt>Wire</dt><dd>${el.wire}</dd><dt>Point</dt><dd>${el.point}</dd>`;
   $('ver').textContent=C2.version;
 }
-// Load first preset
-sides=JSON.parse(JSON.stringify(PRESETS.vadodara.sides)); state=Object.assign({}, PRESETS.vadodara); delete state.sides;
-render();
+// ---- Quick mode
+let mode='quick';
+const q={ city:'Vadodara', area:120, floor:'top', sun:'W', win:16, curtain:true, people:2, use:'night' };
+E.CITIES.slice().sort((a,b)=>a.name.localeCompare(b.name)).forEach(c=>{ const o=document.createElement('option'); o.value=c.name; o.textContent=c.name; $('qCity').appendChild(o); });
+function quickToState(){
+  const s=E.defaultInput();
+  s.city=q.city; s.heightFt=10; s.wallType='brick9'; s.roofType='rccBare'; s.roofFinish='grey'; s.floor=q.floor; s.ach='average'; s.appliances=['fan'];
+  const area=Math.max(40,Math.min(800,q.area||120));
+  const L=Math.sqrt(area*1.25); s.lengthFt=+L.toFixed(1); s.widthFt=+(area/L).toFixed(1);
+  s.usage = q.use==='kitchen' ? 'day' : q.use; s.kitchen = q.use==='kitchen' ? 'open' : 'none';
+  if(s.usage==='day' && q.use!=='kitchen') s.appliances.push('tv');
+  s.peopleDay=q.people; s.peopleNight=Math.min(q.people,2+Math.floor(q.people/3));
+  const shades=q.curtain?['curtains']:[];
+  const win=q.win>0?[{areaFt2:q.win,glass:'single',shades}]:[];
+  const sd={A:null,B:null,C:null,D:null};
+  if(q.sun==='WS'){ sd.A={orient:'W',windows:win}; sd.B={orient:'S',windows:[]}; }
+  else if(q.sun!=='none'){ sd.A={orient:q.sun,windows:win}; }
+  return {state:s, sides:sd};
+}
+function syncQuick(){
+  $('qCity').value=q.city; $('qArea').value=q.area; $('qCurtain').checked=q.curtain;
+  [['qFloor','floor'],['qSun','sun'],['qWin','win'],['qPeople','people'],['qUse','use']].forEach(([id,k])=> $(id).querySelectorAll('button').forEach(b=> b.setAttribute('aria-pressed', String(String(b.dataset.v)===String(q[k])))));
+  $('qWin').hidden = q.sun==='none';
+}
+function renderQuick(){ const m=quickToState(); state=m.state; sides=m.sides; syncQuick(); render(); }
+[['qFloor','floor'],['qSun','sun'],['qWin','win'],['qPeople','people'],['qUse','use']].forEach(([id,k])=> $(id).querySelectorAll('button').forEach(b=> b.onclick=()=>{ q[k]= (k==='win'||k==='people') ? +b.dataset.v : b.dataset.v; renderQuick(); }));
+$('qCity').onchange=e=>{ q.city=e.target.value; renderQuick(); };
+$('qArea').oninput=e=>{ const v=+e.target.value; if(v>=40) { q.area=v; renderQuick(); } };
+$('qCurtain').onchange=e=>{ q.curtain=e.target.checked; renderQuick(); };
+function setMode(m){ mode=m; $('quick').hidden = m!=='quick'; $('form').hidden = m==='quick';
+  $('modeQuick').setAttribute('aria-selected', String(m==='quick')); $('modeFull').setAttribute('aria-selected', String(m!=='quick'));
+  $('modeHint').textContent = m==='quick' ? 'Seven questions, about a minute. Good enough to shortlist a size.' : 'Every wall, window and appliance. Use this before you buy.';
+  if(m==='quick') renderQuick(); else render(); }
+$('modeQuick').onclick=()=>setMode('quick'); $('modeFull').onclick=()=>setMode('full');
+$('qRefine').onclick=()=>{ setMode('full'); $('form').scrollIntoView({behavior:'smooth',block:'start'}); };
+document.querySelectorAll('[data-preset]').forEach(b=> b.addEventListener('click', ()=>{ if(mode==='quick') setMode('full'); }, true));
+
+// Start in quick mode with the Vadodara example
+setMode('quick');
 })();
 </script>
